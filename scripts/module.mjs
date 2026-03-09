@@ -5,6 +5,7 @@
 
 import { ImporterApp } from "./apps/ImporterApp.mjs";
 import { createMacros } from "./macros.mjs";
+import { registerProxyQuery } from "./proxy.mjs";
 
 const MODULE_ID = "fvtt-compendium-importer";
 
@@ -92,6 +93,7 @@ Hooks.once("init", () => {
 
 Hooks.on("ready", async () => {
   console.log(`${MODULE_ID} | Ready`);
+  registerProxyQuery();
   await createMacros();
   registerChatCommand();
 });
