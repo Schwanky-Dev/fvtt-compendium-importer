@@ -23,6 +23,8 @@
     "Settings": {
       "EnableOpen5e": "Enable Open5e",
       "EnableOpen5eHint": "Search the Open5e SRD API for monsters, spells, and items.",
+      "EnableWikidot": "Enable Wikidot",
+      "EnableWikidotHint": "Scrape dnd5e.wikidot.com SRD pages (requires proxy for CORS).",
       "EnableDDB": "Enable D&D Beyond",
       "EnableDDBHint": "Scrape D&D Beyond pages (requires proxy for CORS).",
       "EnableRoll20": "Enable Roll20",

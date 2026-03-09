@@ -47,6 +47,15 @@ Hooks.once("init", () => {
     default: false,
   });
 
+  game.settings.register(MODULE_ID, "enableWikidot", {
+    name: "COMPIMPORTER.Settings.EnableWikidot",
+    hint: "COMPIMPORTER.Settings.EnableWikidotHint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register(MODULE_ID, "enableRoll20", {
     name: "COMPIMPORTER.Settings.EnableRoll20",
     hint: "COMPIMPORTER.Settings.EnableRoll20Hint",
