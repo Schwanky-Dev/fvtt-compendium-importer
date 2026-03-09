@@ -1,13 +1,13 @@
 /**
- * Main Compendium Importer UI — extends ApplicationV2.
- * Provides search, preview, and import functionality.
+ * Compendium Importer — Simplified one-click import UI.
+ * Search → Results with import buttons. That's it.
  */
 
 import { Open5eScraper } from "../scrapers/open5e.mjs";
 import { DDBScraper } from "../scrapers/ddb.mjs";
 import { Roll20Scraper } from "../scrapers/roll20.mjs";
 import { WikidotScraper } from "../scrapers/wikidot.mjs";
-import { generatePreview, importResult } from "../importer.mjs";
+import { importResult } from "../importer.mjs";
 
 const MODULE_ID = "fvtt-compendium-importer";
 
@@ -23,16 +23,13 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
       resizable: true,
     },
     position: {
-      width: 800,
-      height: 650,
+      width: 620,
+      height: 500,
     },
     classes: ["compendium-importer-app"],
     actions: {
       search: ImporterApp.#onSearch,
       importResult: ImporterApp.#onImport,
-      previewResult: ImporterApp.#onPreview,
-      clearPreview: ImporterApp.#onClearPreview,
-      changeCategory: ImporterApp.#onChangeCategory,
     },
   };
 
@@ -42,75 +39,89 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     },
   };
 
-  /** @type {BaseScraper[]} */
   #scrapers = [];
-
-  /** @type {SearchResult[]} */
   #results = [];
-
-  /** @type {SearchResult|null} */
-  #selectedResult = null;
-
-  /** @type {string} */
-  #previewHTML = "";
-
-  /** @type {boolean} */
   #loading = false;
-
-  /** @type {string} */
   #searchQuery = "";
-
-  /** @type {string} */
-  #category = "all";
-
-  /** @type {string} */
-  #importType = "auto";
+  /** @type {Set<number>} indices currently importing */
+  #importing = new Set();
 
   constructor(options = {}) {
     super(options);
     this.#scrapers = [new Open5eScraper(), new WikidotScraper(), new DDBScraper(), new Roll20Scraper()];
-    this.#importType = game.settings.get(MODULE_ID, "defaultImportType") ?? "auto";
+  }
+
+  _onRender(context, options) {
+    // Attach Enter key handler to search input
+    const input = this.element.querySelector('input[name="query"]');
+    if (input) {
+      input.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          this.doSearch(input.value);
+        }
+      });
+      // Re-focus and set cursor to end after re-render
+      if (this.#searchQuery) {
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }
   }
 
   async _prepareContext() {
     return {
-      results: this.#results,
+      results: this.#results.map((r, i) => ({
+        ...r,
+        index: i,
+        importing: this.#importing.has(i),
+        typeBadge: this.#typeBadge(r),
+        metaInfo: this.#metaInfo(r),
+      })),
       loading: this.#loading,
       searchQuery: this.#searchQuery,
-      category: this.#category,
-      importType: this.#importType,
-      previewHTML: this.#previewHTML,
-      selectedResult: this.#selectedResult,
       hasResults: this.#results.length > 0,
       noResults: !this.#loading && this.#searchQuery && this.#results.length === 0,
     };
   }
 
-  /**
-   * Perform a search across all enabled scrapers.
-   */
-  async doSearch(query, category) {
+  #typeBadge(result) {
+    switch (result.type) {
+      case "monster": return "Monster";
+      case "spell": return "Spell";
+      case "weapon": return "Weapon";
+      case "armor": return "Armor";
+      case "magicitem": return "Magic Item";
+      default: return "Item";
+    }
+  }
+
+  #metaInfo(result) {
+    const parts = [];
+    if (result.type === "monster" && result.cr) parts.push(`CR ${result.cr}`);
+    if (result.type === "spell" && result.level) parts.push(`Lvl ${result.level}`);
+    if (result.type === "spell" && result.school) parts.push(result.school);
+    if (result.rarity) parts.push(result.rarity);
+    return parts.join(" · ");
+  }
+
+  #autoType(result) {
+    return result.type === "monster" ? "actor" : "item";
+  }
+
+  async doSearch(query) {
     if (!query?.trim()) return;
 
     this.#searchQuery = query.trim();
-    this.#category = category || "all";
     this.#loading = true;
     this.#results = [];
-    this.#selectedResult = null;
-    this.#previewHTML = "";
+    this.#importing.clear();
     this.render();
 
     const enabledScrapers = this.#scrapers.filter((s) => s.isEnabled());
-    const categoryMap = {
-      all: undefined,
-      monsters: "monsters",
-      spells: "spells",
-      items: "items",
-    };
 
     try {
       const searches = enabledScrapers.map((s) =>
-        s.search(this.#searchQuery, categoryMap[this.#category]).catch((err) => {
+        s.search(this.#searchQuery).catch((err) => {
           console.warn(`${MODULE_ID} | Scraper ${s.constructor.id} failed:`, err);
           return [];
         })
@@ -119,7 +130,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
       const resultArrays = await Promise.all(searches);
       this.#results = resultArrays.flat();
 
-      // Sort: exact matches first, then alphabetically
+      // Sort: exact matches first, then alphabetical
       const lowerQuery = this.#searchQuery.toLowerCase();
       this.#results.sort((a, b) => {
         const aExact = a.name.toLowerCase() === lowerQuery ? 0 : 1;
@@ -148,72 +159,48 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------- Actions ------------------------------- */
 
   static async #onSearch(event, target) {
-    const form = target.closest(".ci-search-bar");
-    const input = form?.querySelector('input[name="query"]');
-    const select = form?.querySelector('select[name="category"]');
+    // Handle both button click and Enter key on input
+    const container = this.element.querySelector(".ci-search-bar");
+    const input = container?.querySelector('input[name="query"]');
     const query = input?.value ?? "";
-    const category = select?.value ?? "all";
-    await this.doSearch(query, category);
+    await this.doSearch(query);
   }
 
   static async #onImport(event, target) {
     const index = parseInt(target.dataset.index);
-    const importType = target.dataset.importType || this.#importType;
     const result = this.#results[index];
     if (!result) return;
+
+    this.#importing.add(index);
+    this.render();
 
     try {
-      target.disabled = true;
-      target.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
       const scraper = this.#scrapers.find((s) => s.constructor.id === result.source);
-      const resolvedType = importType === "auto" ? this.#autoType(result) : importType;
-      await importResult(result, resolvedType, scraper);
+      const resolvedType = this.#autoType(result);
+      const doc = await importResult(result, resolvedType, scraper);
+
+      // Toast with link to open the document
+      const typeName = resolvedType === "actor" ? "Actor" : "Item";
+      ui.notifications.info(
+        `Imported <strong>${doc.name}</strong> as ${typeName}. <a onclick="game.${resolvedType === 'actor' ? 'actors' : 'items'}.get('${doc.id}')?.sheet?.render(true)">Open</a>`,
+        { permanent: false }
+      );
     } catch (err) {
       console.error(`${MODULE_ID} | Import failed:`, err);
-      ui.notifications.error(game.i18n.format("COMPIMPORTER.ImportError", { error: err.message }));
+      ui.notifications.error(`Import failed: ${err.message}`);
     } finally {
-      target.disabled = false;
-      target.innerHTML = '<i class="fas fa-file-import"></i> Import';
+      this.#importing.delete(index);
+      this.render();
     }
-  }
-
-  static #onPreview(event, target) {
-    const index = parseInt(target.dataset.index);
-    const result = this.#results[index];
-    if (!result) return;
-
-    this.#selectedResult = result;
-    this.#previewHTML = generatePreview(result);
-    this.render();
-  }
-
-  static #onClearPreview() {
-    this.#selectedResult = null;
-    this.#previewHTML = "";
-    this.render();
-  }
-
-  static #onChangeCategory(event, target) {
-    this.#category = target.value;
-  }
-
-  #autoType(result) {
-    if (result.type === "monster") return "actor";
-    return "item";
   }
 
   /* ------------------------------ Public API ------------------------------ */
 
-  /**
-   * Open the app and optionally run a search immediately.
-   */
-  static async openWithSearch(query, category) {
+  static async openWithSearch(query) {
     const app = new ImporterApp();
     app.render(true);
     if (query) {
-      // Small delay to ensure the app is rendered
-      setTimeout(() => app.doSearch(query, category), 100);
+      setTimeout(() => app.doSearch(query), 100);
     }
     return app;
   }

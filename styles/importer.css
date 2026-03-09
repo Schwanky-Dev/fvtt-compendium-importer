@@ -1,13 +1,8 @@
-/* ============================================================
-   Compendium Importer — Full UI Styling
-   Dark theme matching Foundry VTT aesthetic
-   ============================================================ */
+/* Compendium Importer — Simplified UI */
 
 .compendium-importer-app {
   font-family: "Signika", "Palatino Linotype", serif;
 }
-
-/* ---- Container Layout ---- */
 
 .ci-container {
   display: flex;
@@ -16,16 +11,7 @@
   gap: 8px;
 }
 
-.ci-main-content {
-  display: flex;
-  flex: 1;
-  gap: 8px;
-  overflow: hidden;
-  min-height: 0;
-}
-
-/* ---- Search Bar ---- */
-
+/* Search Bar */
 .ci-search-bar {
   padding: 8px;
   background: rgba(0, 0, 0, 0.2);
@@ -36,12 +22,11 @@
 .ci-search-input-group {
   display: flex;
   gap: 6px;
-  align-items: center;
 }
 
 .ci-search-input-group input[type="text"] {
   flex: 1;
-  padding: 6px 10px;
+  padding: 8px 12px;
   border: 1px solid #555;
   border-radius: 3px;
   background: rgba(0, 0, 0, 0.4);
@@ -55,25 +40,14 @@
   box-shadow: 0 0 4px rgba(123, 45, 139, 0.5);
 }
 
-.ci-search-input-group select {
-  padding: 6px 8px;
-  border: 1px solid #555;
-  border-radius: 3px;
-  background: rgba(0, 0, 0, 0.4);
-  color: #eee;
-  font-size: 13px;
-  min-width: 110px;
-}
-
 .ci-search-btn {
-  padding: 6px 16px;
+  padding: 8px 14px;
   background: #7B2D8B;
   color: white;
   border: none;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 13px;
-  white-space: nowrap;
+  font-size: 14px;
   transition: background 0.2s;
 }
 
@@ -81,18 +55,14 @@
   background: #9B3DAB;
 }
 
-/* ---- Results Panel ---- */
-
-.ci-results-panel {
+/* Results */
+.ci-results {
   flex: 1;
   overflow-y: auto;
-  padding: 4px;
-  min-width: 0;
+  min-height: 0;
 }
 
-.ci-loading,
-.ci-no-results,
-.ci-welcome {
+.ci-status {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -100,263 +70,101 @@
   height: 100%;
   color: #999;
   text-align: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.ci-welcome h3 {
-  margin: 0;
-  color: #ccc;
-}
+.ci-welcome p { margin: 2px 0; }
+.ci-hint { font-size: 12px; font-style: italic; color: #666; }
 
-.ci-hint {
-  font-size: 12px;
-  font-style: italic;
-  color: #777;
-}
-
-/* ---- Results Grid ---- */
-
-.ci-results-grid {
+/* Result Rows */
+.ci-results-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+  padding: 0 4px;
 }
 
-.ci-result-card {
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  padding: 8px 10px;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.ci-result-card:hover {
-  border-color: rgba(123, 45, 139, 0.5);
-  background: rgba(0, 0, 0, 0.35);
-}
-
-.ci-result-card.ci-selected {
-  border-color: #7B2D8B;
-  background: rgba(123, 45, 139, 0.15);
-}
-
-.ci-result-header {
+.ci-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
-}
-
-.ci-result-name {
-  font-weight: bold;
-  font-size: 14px;
-  color: #eee;
-}
-
-.ci-source-badge {
-  font-size: 10px;
-  padding: 2px 6px;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
-  color: white;
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.ci-row:hover {
+  border-color: rgba(123, 45, 139, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.ci-row-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.ci-name {
+  font-weight: bold;
+  font-size: 13px;
+  color: #eee;
+  white-space: nowrap;
+}
+
+.ci-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
-.ci-result-meta {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 6px;
-  flex-wrap: wrap;
+.ci-badge-type {
+  background: rgba(123, 45, 139, 0.4);
+  color: #d4a0e0;
+  border: 1px solid rgba(123, 45, 139, 0.5);
 }
 
-.ci-meta-tag {
+.ci-badge-source {
+  color: white;
+}
+
+.ci-meta {
   font-size: 11px;
-  color: #aaa;
+  color: #999;
 }
 
-.ci-meta-tag i {
-  margin-right: 3px;
-}
-
-/* ---- Result Action Buttons ---- */
-
-.ci-result-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.ci-btn {
-  padding: 4px 8px;
-  border: 1px solid #555;
+/* Import Button (in rows) */
+.ci-row .ci-import-btn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  background: rgba(123, 45, 139, 0.3);
+  color: #d4a0e0;
+  border: 1px solid rgba(123, 45, 139, 0.4);
   border-radius: 3px;
-  background: rgba(0, 0, 0, 0.3);
-  color: #ccc;
   cursor: pointer;
   font-size: 12px;
   transition: all 0.15s;
 }
 
-.ci-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+.ci-row .ci-import-btn:hover:not(:disabled) {
+  background: #7B2D8B;
+  color: white;
 }
 
-.ci-btn-preview:hover {
-  border-color: #2196F3;
-  color: #2196F3;
+.ci-row .ci-import-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
-.ci-btn-import:hover {
-  border-color: #7B2D8B;
-  color: #7B2D8B;
-}
-
-.ci-btn-actor:hover {
-  border-color: #4CAF50;
-  color: #4CAF50;
-}
-
-.ci-btn-item:hover {
-  border-color: #FF9800;
-  color: #FF9800;
-}
-
-.ci-btn-journal:hover {
-  border-color: #9C27B0;
-  color: #9C27B0;
-}
-
-.ci-btn-close:hover {
-  border-color: #f44336;
-  color: #f44336;
-}
-
-/* ---- Preview Panel ---- */
-
-.ci-preview-panel {
-  width: 340px;
-  min-width: 280px;
-  max-width: 400px;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.ci-preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 10px;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.ci-preview-header h3 {
-  margin: 0;
-  font-size: 14px;
-  color: #ccc;
-}
-
-.ci-preview-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-}
-
-/* ---- Stat Block Styling (Parchment Look) ---- */
-
-.ci-stat-block {
-  background: linear-gradient(135deg, #FDF1DC 0%, #F0E0C0 50%, #E8D5A8 100%);
-  color: #1a1a1a;
-  padding: 16px;
-  border-radius: 4px;
-  border: 2px solid #C9AD6A;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  font-family: "Bookinsanity", "Palatino Linotype", "Palatino", serif;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.ci-stat-block h2.ci-stat-name {
-  font-family: "Mr Eaves Small Caps", "Palatino Linotype", serif;
-  color: #922610;
-  font-size: 22px;
-  margin: 0 0 2px 0;
-  border-bottom: none;
-  padding: 0;
-}
-
-.ci-stat-block .ci-stat-meta {
-  font-size: 12px;
-  color: #555;
-  margin: 0 0 8px 0;
-}
-
-.ci-stat-divider {
-  height: 2px;
-  background: linear-gradient(to right, #922610, #C9AD6A, #922610);
-  margin: 8px 0;
-  border: none;
-}
-
-.ci-stat-block p {
-  margin: 4px 0;
-}
-
-.ci-stat-block h3 {
-  color: #922610;
-  font-size: 16px;
-  margin: 12px 0 4px 0;
-  border-bottom: 1px solid #922610;
-  padding-bottom: 2px;
-}
-
-.ci-stat-block strong {
-  color: #1a1a1a;
-}
-
-/* ---- Ability Score Table ---- */
-
-.ci-stat-abilities {
-  width: 100%;
-  text-align: center;
-  border-collapse: collapse;
-  margin: 4px 0;
-}
-
-.ci-stat-abilities th {
-  color: #922610;
-  font-weight: bold;
-  font-size: 12px;
-  padding: 2px 4px;
-}
-
-.ci-stat-abilities td {
-  font-size: 12px;
-  padding: 2px 4px;
-  color: #333;
-}
-
-/* ---- Spell Block Additions ---- */
-
-.ci-spell-block .ci-spell-classes {
-  margin-top: 12px;
-  font-style: italic;
-  color: #666;
-}
-
-/* ---- Item Block Additions ---- */
-
-.ci-item-block {
-  /* Same parchment base */
-}
-
-/* ---- Sidebar Import Button ---- */
-
-.ci-import-btn {
-  flex: 0 0 auto;
+/* Sidebar Import Button */
+button.ci-import-btn {
   background: #7B2D8B;
   color: white;
   border: none;
@@ -367,40 +175,53 @@
   transition: background 0.2s;
 }
 
-.ci-import-btn:hover {
+button.ci-import-btn:hover {
   background: #9B3DAB;
 }
 
-/* ---- Scrollbar Styling ---- */
+/* Scrollbar */
+.ci-results::-webkit-scrollbar { width: 6px; }
+.ci-results::-webkit-scrollbar-track { background: transparent; }
+.ci-results::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+.ci-results::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
 
-.ci-results-panel::-webkit-scrollbar,
-.ci-preview-content::-webkit-scrollbar {
-  width: 6px;
+/* Stat block styling (kept for journal imports) */
+.ci-stat-block {
+  background: linear-gradient(135deg, #FDF1DC 0%, #F0E0C0 50%, #E8D5A8 100%);
+  color: #1a1a1a;
+  padding: 16px;
+  border-radius: 4px;
+  border: 2px solid #C9AD6A;
+  font-family: "Bookinsanity", "Palatino Linotype", serif;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
-.ci-results-panel::-webkit-scrollbar-track,
-.ci-preview-content::-webkit-scrollbar-track {
-  background: transparent;
+.ci-stat-block h2.ci-stat-name {
+  color: #922610;
+  font-size: 22px;
+  margin: 0 0 2px 0;
 }
 
-.ci-results-panel::-webkit-scrollbar-thumb,
-.ci-preview-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
+.ci-stat-divider {
+  height: 2px;
+  background: linear-gradient(to right, #922610, #C9AD6A, #922610);
+  margin: 8px 0;
+  border: none;
 }
 
-.ci-results-panel::-webkit-scrollbar-thumb:hover,
-.ci-preview-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+.ci-stat-block h3 {
+  color: #922610;
+  font-size: 16px;
+  margin: 12px 0 4px 0;
+  border-bottom: 1px solid #922610;
 }
 
-/* ---- Loading Spinner ---- */
-
-@keyframes ci-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.ci-stat-abilities {
+  width: 100%;
+  text-align: center;
+  border-collapse: collapse;
 }
 
-.ci-loading .fa-spinner {
-  animation: ci-spin 1s linear infinite;
-}
+.ci-stat-abilities th { color: #922610; font-weight: bold; font-size: 12px; padding: 2px 4px; }
+.ci-stat-abilities td { font-size: 12px; padding: 2px 4px; color: #333; }

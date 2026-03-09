@@ -2,94 +2,52 @@
   <!-- Search Bar -->
   <div class="ci-search-bar">
     <div class="ci-search-input-group">
-      <input type="text" name="query" value="{{searchQuery}}" placeholder="{{localize 'COMPIMPORTER.SearchPlaceholder'}}" autofocus />
-      <select name="category" data-action="changeCategory">
-        <option value="all" {{#if (eq category "all")}}selected{{/if}}>All Types</option>
-        <option value="monsters" {{#if (eq category "monsters")}}selected{{/if}}>Monsters</option>
-        <option value="spells" {{#if (eq category "spells")}}selected{{/if}}>Spells</option>
-        <option value="items" {{#if (eq category "items")}}selected{{/if}}>Items</option>
-      </select>
+      <input type="text" name="query" value="{{searchQuery}}"
+             placeholder="{{localize 'COMPIMPORTER.SearchPlaceholder'}}" autofocus />
       <button type="button" data-action="search" class="ci-search-btn">
-        <i class="fas fa-search"></i> {{localize "COMPIMPORTER.Search"}}
+        <i class="fas fa-search"></i>
       </button>
     </div>
   </div>
 
-  <div class="ci-main-content">
-    <!-- Results Panel -->
-    <div class="ci-results-panel">
-      {{#if loading}}
-        <div class="ci-loading">
-          <i class="fas fa-spinner fa-spin fa-2x"></i>
-          <p>{{localize "COMPIMPORTER.Loading"}}</p>
-        </div>
-      {{else if noResults}}
-        <div class="ci-no-results">
-          <i class="fas fa-search fa-2x"></i>
-          <p>{{localize "COMPIMPORTER.NoResults"}}</p>
-        </div>
-      {{else if hasResults}}
-        <div class="ci-results-grid">
-          {{#each results}}
-            <div class="ci-result-card {{#if (eq ../selectedResult.slug this.slug)}}ci-selected{{/if}}">
-              <div class="ci-result-header">
-                <span class="ci-result-name">{{this.name}}</span>
-                <span class="ci-source-badge" style="background-color: {{this.sourceColor}}">{{this.sourceLabel}}</span>
-              </div>
-              <div class="ci-result-meta">
-                {{#if (eq this.type "monster")}}
-                  <span class="ci-meta-tag"><i class="fas fa-skull"></i> {{this.type_display}}</span>
-                  {{#if this.cr}}<span class="ci-meta-tag"><strong>CR</strong> {{this.cr}}</span>{{/if}}
-                {{else if (eq this.type "spell")}}
-                  <span class="ci-meta-tag"><i class="fas fa-magic"></i> {{this.school}}</span>
-                  {{#if this.level}}<span class="ci-meta-tag"><strong>Lvl</strong> {{this.level}}</span>{{/if}}
-                {{else}}
-                  <span class="ci-meta-tag"><i class="fas fa-gem"></i> {{this.type}}</span>
-                  {{#if this.rarity}}<span class="ci-meta-tag">{{this.rarity}}</span>{{/if}}
-                {{/if}}
-              </div>
-              <div class="ci-result-actions">
-                <button type="button" data-action="previewResult" data-index="{{@index}}" class="ci-btn ci-btn-preview" title="Preview">
-                  <i class="fas fa-eye"></i>
-                </button>
-                <button type="button" data-action="importResult" data-index="{{@index}}" data-import-type="auto" class="ci-btn ci-btn-import" title="Import (Auto)">
-                  <i class="fas fa-file-import"></i>
-                </button>
-                <button type="button" data-action="importResult" data-index="{{@index}}" data-import-type="actor" class="ci-btn ci-btn-actor" title="Import as Actor">
-                  <i class="fas fa-user"></i>
-                </button>
-                <button type="button" data-action="importResult" data-index="{{@index}}" data-import-type="item" class="ci-btn ci-btn-item" title="Import as Item">
-                  <i class="fas fa-suitcase"></i>
-                </button>
-                <button type="button" data-action="importResult" data-index="{{@index}}" data-import-type="journal" class="ci-btn ci-btn-journal" title="Import as Journal">
-                  <i class="fas fa-book-open"></i>
-                </button>
-              </div>
+  <!-- Results -->
+  <div class="ci-results">
+    {{#if loading}}
+      <div class="ci-status">
+        <i class="fas fa-spinner fa-spin fa-2x"></i>
+        <p>{{localize "COMPIMPORTER.Loading"}}</p>
+      </div>
+    {{else if noResults}}
+      <div class="ci-status">
+        <i class="fas fa-search fa-2x"></i>
+        <p>{{localize "COMPIMPORTER.NoResults"}}</p>
+      </div>
+    {{else if hasResults}}
+      <div class="ci-results-list">
+        {{#each results}}
+          <div class="ci-row">
+            <div class="ci-row-info">
+              <span class="ci-name">{{this.name}}</span>
+              <span class="ci-badge ci-badge-type">{{this.typeBadge}}</span>
+              <span class="ci-badge ci-badge-source" style="background:{{this.sourceColor}}">{{this.sourceLabel}}</span>
+              {{#if this.metaInfo}}<span class="ci-meta">{{this.metaInfo}}</span>{{/if}}
             </div>
-          {{/each}}
-        </div>
-      {{else}}
-        <div class="ci-welcome">
-          <i class="fas fa-dragon fa-3x"></i>
-          <h3>Compendium Importer</h3>
-          <p>Search for monsters, spells, and items from Open5e and other sources.</p>
-          <p class="ci-hint">Try searching for "goblin", "fireball", or "longsword"</p>
-        </div>
-      {{/if}}
-    </div>
-
-    <!-- Preview Panel -->
-    {{#if previewHTML}}
-      <div class="ci-preview-panel">
-        <div class="ci-preview-header">
-          <h3>{{localize "COMPIMPORTER.Preview"}}</h3>
-          <button type="button" data-action="clearPreview" class="ci-btn ci-btn-close" title="Close Preview">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="ci-preview-content">
-          {{{previewHTML}}}
-        </div>
+            <button type="button" data-action="importResult" data-index="{{this.index}}"
+                    class="ci-import-btn" {{#if this.importing}}disabled{{/if}}>
+              {{#if this.importing}}
+                <i class="fas fa-spinner fa-spin"></i>
+              {{else}}
+                <i class="fas fa-download"></i>
+              {{/if}}
+            </button>
+          </div>
+        {{/each}}
+      </div>
+    {{else}}
+      <div class="ci-status ci-welcome">
+        <i class="fas fa-dragon fa-3x"></i>
+        <p>Search for monsters, spells, and items</p>
+        <p class="ci-hint">Try "goblin", "fireball", or "longsword"</p>
       </div>
     {{/if}}
   </div>

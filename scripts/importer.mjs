@@ -116,7 +116,6 @@ async function importAsActor(result, data) {
     await actor.createEmbeddedDocuments("Item", embeddedItems);
   }
 
-  ui.notifications.info(game.i18n.format("COMPIMPORTER.ImportSuccess", { name: actor.name }));
   return actor;
 }
 
@@ -157,7 +156,6 @@ async function importAsItem(result, data) {
   delete itemData.items;
 
   const item = await Item.create(itemData);
-  ui.notifications.info(game.i18n.format("COMPIMPORTER.ImportSuccess", { name: item.name }));
   return item;
 }
 
@@ -182,7 +180,6 @@ async function importAsJournal(result, data) {
   };
 
   const journal = await JournalEntry.create(journalData);
-  ui.notifications.info(game.i18n.format("COMPIMPORTER.ImportSuccess", { name: journal.name }));
   return journal;
 }
 

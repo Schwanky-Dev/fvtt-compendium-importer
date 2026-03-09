@@ -18,16 +18,6 @@ Hooks.once("init", () => {
     return a === b;
   });
 
-  Handlebars.registerHelper("ifCond", function (v1, operator, v2, options) {
-    switch (operator) {
-      case "===": return v1 === v2 ? options.fn(this) : options.inverse(this);
-      case "!==": return v1 !== v2 ? options.fn(this) : options.inverse(this);
-      case "&&": return v1 && v2 ? options.fn(this) : options.inverse(this);
-      case "||": return v1 || v2 ? options.fn(this) : options.inverse(this);
-      default: return options.inverse(this);
-    }
-  });
-
   // Register module settings
   game.settings.register(MODULE_ID, "enableOpen5e", {
     name: "COMPIMPORTER.Settings.EnableOpen5e",
@@ -53,7 +43,7 @@ Hooks.once("init", () => {
     scope: "world",
     config: true,
     type: Boolean,
-    default: false,
+    default: true,
   });
 
   game.settings.register(MODULE_ID, "enableRoll20", {
@@ -63,30 +53,6 @@ Hooks.once("init", () => {
     config: true,
     type: Boolean,
     default: false,
-  });
-
-  game.settings.register(MODULE_ID, "enableWikidot", {
-    name: "COMPIMPORTER.Settings.EnableWikidot",
-    hint: "COMPIMPORTER.Settings.EnableWikidotHint",
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: true,
-  });
-
-  game.settings.register(MODULE_ID, "defaultImportType", {
-    name: "COMPIMPORTER.Settings.DefaultImportType",
-    hint: "COMPIMPORTER.Settings.DefaultImportTypeHint",
-    scope: "world",
-    config: true,
-    type: String,
-    default: "auto",
-    choices: {
-      auto: "Auto (Monster→Actor, Spell/Item→Item)",
-      actor: "Always Actor",
-      item: "Always Item",
-      journal: "Always Journal Entry",
-    },
   });
 
   game.settings.register(MODULE_ID, "autoCreateMacros", {
@@ -103,22 +69,25 @@ Hooks.once("init", () => {
 
 Hooks.on("ready", async () => {
   console.log(`${MODULE_ID} | Ready`);
-
-  // Create macros on first load
   await createMacros();
-
-  // Register chat command
   registerChatCommand();
 });
 
 /* ----------------------------- Sidebar Button ----------------------------- */
 
 Hooks.on("renderSidebarTab", (app, html) => {
-  // Add button to Actors sidebar
   if (app.tabName !== "actors") return;
 
-  const header = html[0]?.querySelector?.(".directory-header .action-buttons") ??
-                 html.find?.(".directory-header .action-buttons")?.[0];
+  // v13 ApplicationV2: html is an HTMLElement
+  // v12 / older: html may be jQuery or an array-like
+  let header;
+  if (html instanceof HTMLElement) {
+    header = html.querySelector(".directory-header .action-buttons");
+  } else if (html?.[0] instanceof HTMLElement) {
+    header = html[0].querySelector(".directory-header .action-buttons");
+  } else if (typeof html?.find === "function") {
+    header = html.find(".directory-header .action-buttons")?.[0];
+  }
   if (!header) return;
 
   // Don't add if already exists
@@ -150,6 +119,6 @@ function registerChatCommand() {
     }
 
     ImporterApp.openWithSearch(query);
-    return false; // Prevent message from being posted
+    return false;
   });
 }
