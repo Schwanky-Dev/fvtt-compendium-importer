@@ -9,8 +9,16 @@ const MACRO = {
   name: "Quick Import",
   icon: "icons/tools/scribal/magnifying-glass.webp",
   command: `
-const { ImporterApp } = await import("./modules/${MODULE_ID}/scripts/apps/ImporterApp.mjs");
-ImporterApp.openWithSearch();
+const query = await Dialog.prompt({
+  title: "Quick Import",
+  content: '<input type="text" name="query" placeholder="Search for monsters, spells, items..." autofocus>',
+  callback: (html) => html.querySelector ? html.querySelector('input[name="query"]')?.value : html[0]?.querySelector('input[name="query"]')?.value,
+  rejectClose: false,
+});
+if (query) {
+  const { ImporterApp } = await import("/modules/fvtt-compendium-importer/scripts/apps/ImporterApp.mjs");
+  ImporterApp.openWithSearch(query);
+}
 `.trim(),
 };
 
