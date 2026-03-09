@@ -25,7 +25,7 @@
     {{else if hasResults}}
       <div class="ci-results-list">
         {{#each results}}
-          <div class="ci-row">
+          <div class="ci-row" data-action="previewResult" data-index="{{this.index}}">
             <div class="ci-row-info">
               <span class="ci-name">{{this.name}}</span>
               <span class="ci-badge ci-badge-type">{{this.typeBadge}}</span>
@@ -51,4 +51,15 @@
       </div>
     {{/if}}
   </div>
+
+  <!-- Preview Panel -->
+  {{#if previewHtml}}
+    <div class="ci-preview-panel">
+      <div class="ci-preview-header">
+        <span>Preview</span>
+        <button type="button" data-action="closePreview" class="ci-preview-close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="ci-preview-content">{{{previewHtml}}}</div>
+    </div>
+  {{/if}}
 </div>

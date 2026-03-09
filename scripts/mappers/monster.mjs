@@ -70,12 +70,17 @@ function parseSpeed(speedObj) {
  * Parse AC — Open5e gives armor_class as a number and armor_desc as string.
  */
 function parseAC(monster) {
-  const ac = monster.armor_class ?? 10;
-  const desc = monster.armor_desc ?? "";
+  let raw = monster.armor_class ?? 10;
+  // Ensure AC is a plain number — Open5e sometimes returns strings like "10 (leather armor)"
+  if (typeof raw === "string") {
+    const match = raw.match(/(\d+)/);
+    raw = match ? parseInt(match[1]) : 10;
+  }
+  const ac = typeof raw === "number" ? raw : parseInt(raw) || 10;
   return {
     flat: ac,
     calc: "flat",
-    formula: desc ? `${ac} (${desc})` : String(ac),
+    formula: "",
   };
 }
 
@@ -135,12 +140,123 @@ function parseCR(cr) {
 }
 
 /**
+ * Icon mapping for common weapons, attacks, and action types.
+ * Uses well-known Foundry core icon paths.
+ */
+const ICON_MAP = {
+  // Weapons
+  bite: "icons/skills/melee/mouth-bite-fangs-red.webp",
+  claw: "icons/skills/melee/strike-claw-red.webp",
+  claws: "icons/skills/melee/strike-claw-red.webp",
+  tail: "icons/skills/melee/strike-chain-yellow.webp",
+  slam: "icons/skills/melee/unarmed-punch-fist.webp",
+  fist: "icons/skills/melee/unarmed-punch-fist.webp",
+  gore: "icons/skills/melee/strike-polearm-light.webp",
+  sting: "icons/skills/melee/strike-dagger-red.webp",
+  tentacle: "icons/skills/melee/strike-whip-gray.webp",
+  tentacles: "icons/skills/melee/strike-whip-gray.webp",
+  shortsword: "icons/weapons/swords/shortsword-guard-worn.webp",
+  longsword: "icons/weapons/swords/longsword-guard-broad.webp",
+  greatsword: "icons/weapons/swords/greatsword-crossguard-steel.webp",
+  scimitar: "icons/weapons/swords/scimitar-worn.webp",
+  dagger: "icons/weapons/daggers/dagger-broad-bronze.webp",
+  greataxe: "icons/weapons/axes/axe-broad-brown.webp",
+  handaxe: "icons/weapons/axes/hatchet-broad-brown.webp",
+  battleaxe: "icons/weapons/axes/axe-broad-brown.webp",
+  mace: "icons/weapons/maces/mace-round-spiked-black.webp",
+  morningstar: "icons/weapons/maces/mace-round-spiked-black.webp",
+  warhammer: "icons/weapons/hammers/hammer-war-spiked.webp",
+  maul: "icons/weapons/hammers/hammer-war-spiked.webp",
+  club: "icons/weapons/clubs/club-heavy-barbed-brown.webp",
+  greatclub: "icons/weapons/clubs/club-heavy-barbed-brown.webp",
+  quarterstaff: "icons/weapons/staves/staff-simple.webp",
+  staff: "icons/weapons/staves/staff-simple.webp",
+  spear: "icons/weapons/polearms/spear-simple.webp",
+  javelin: "icons/weapons/polearms/javelin-simple.webp",
+  pike: "icons/weapons/polearms/pike-flared.webp",
+  halberd: "icons/weapons/polearms/halberd-crescent.webp",
+  glaive: "icons/weapons/polearms/glaive-winged.webp",
+  trident: "icons/weapons/polearms/trident-silver.webp",
+  lance: "icons/weapons/polearms/lance-simple.webp",
+  whip: "icons/weapons/misc/whip-pointed-brown.webp",
+  longbow: "icons/weapons/bows/longbow-recurve.webp",
+  shortbow: "icons/weapons/bows/shortbow-recurve.webp",
+  "light crossbow": "icons/weapons/crossbows/crossbow-simple-brown.webp",
+  "heavy crossbow": "icons/weapons/crossbows/crossbow-heavy-brown.webp",
+  crossbow: "icons/weapons/crossbows/crossbow-simple-brown.webp",
+  sling: "icons/weapons/slings/sling-simple-leather.webp",
+  rock: "icons/weapons/ammunition/rock-smooth.webp",
+  // Breath weapons & special
+  "breath weapon": "icons/magic/fire/beam-jet-stream-embers.webp",
+  "fire breath": "icons/magic/fire/beam-jet-stream-embers.webp",
+  "cold breath": "icons/magic/water/projectile-icecicle.webp",
+  "lightning breath": "icons/magic/lightning/bolt-strike-blue.webp",
+  "acid breath": "icons/magic/acid/projectile-faceted-glob.webp",
+  "poison breath": "icons/magic/acid/projectile-faceted-glob.webp",
+  frightful presence: "icons/magic/control/fear-fright-shadow-monster.webp",
+  "eye rays": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
+};
+
+/** Damage type to fallback icon */
+const DAMAGE_TYPE_ICONS = {
+  fire: "icons/magic/fire/beam-jet-stream-embers.webp",
+  cold: "icons/magic/water/projectile-icecicle.webp",
+  lightning: "icons/magic/lightning/bolt-strike-blue.webp",
+  thunder: "icons/magic/sonic/explosion-shock-wave-silhouette.webp",
+  acid: "icons/magic/acid/projectile-faceted-glob.webp",
+  poison: "icons/magic/acid/projectile-faceted-glob.webp",
+  necrotic: "icons/magic/unholy/strike-body-life-soul.webp",
+  radiant: "icons/magic/holy/projectiles-blades-702702.webp",
+  psychic: "icons/magic/control/fear-fright-shadow-monster.webp",
+  force: "icons/magic/sonic/explosion-shock-wave-silhouette.webp",
+  bludgeoning: "icons/skills/melee/unarmed-punch-fist.webp",
+  piercing: "icons/skills/melee/strike-dagger-red.webp",
+  slashing: "icons/skills/melee/strike-claw-red.webp",
+};
+
+const DEFAULT_MELEE_ICON = "icons/skills/melee/unarmed-punch-fist.webp";
+const DEFAULT_RANGED_ICON = "icons/weapons/bows/shortbow-recurve.webp";
+const DEFAULT_SPELL_ICON = "icons/magic/symbols/runes-star-pentagon-blue.webp";
+const DEFAULT_FEAT_ICON = "icons/skills/targeting/target-strike-triple-blue.webp";
+
+/**
+ * Pick the best icon for a monster action/feature.
+ */
+function pickActionIcon(action, actionType) {
+  const name = (action.name ?? "").toLowerCase().trim();
+  const desc = (action.desc ?? "").toLowerCase();
+
+  // Direct name match
+  if (ICON_MAP[name]) return ICON_MAP[name];
+
+  // Partial name match (e.g. "Fire Breath (Recharge 5-6)" matches "fire breath")
+  for (const [key, icon] of Object.entries(ICON_MAP)) {
+    if (name.includes(key)) return icon;
+  }
+
+  // By action type / damage type
+  const dmgMatch = desc.match(/(\w+)\s+damage/i);
+  if (dmgMatch) {
+    const dmgType = dmgMatch[1].toLowerCase();
+    if (DAMAGE_TYPE_ICONS[dmgType]) return DAMAGE_TYPE_ICONS[dmgType];
+  }
+
+  // Melee vs ranged
+  if (desc.includes("melee weapon attack") || desc.includes("melee attack")) return DEFAULT_MELEE_ICON;
+  if (desc.includes("ranged weapon attack") || desc.includes("ranged attack")) return DEFAULT_RANGED_ICON;
+  if (desc.includes("spell") || desc.includes("spellcasting")) return DEFAULT_SPELL_ICON;
+
+  return DEFAULT_FEAT_ICON;
+}
+
+/**
  * Build an action item for the monster.
  */
 function buildActionItem(action, type = "natural") {
   const item = {
     name: action.name,
     type: "feat",
+    img: pickActionIcon(action, type),
     system: {
       description: { value: action.desc || "" },
       source: { custom: "Compendium Importer" },
@@ -242,6 +358,7 @@ export function mapMonster(data) {
       items.push({
         name: ability.name,
         type: "feat",
+        img: pickActionIcon(ability, "special"),
         system: {
           description: { value: ability.desc || "" },
           type: { value: "monster" },
@@ -256,6 +373,7 @@ export function mapMonster(data) {
       items.push({
         name: reaction.name,
         type: "feat",
+        img: pickActionIcon(reaction, "reaction"),
         system: {
           description: { value: reaction.desc || "" },
           type: { value: "monster" },
@@ -350,6 +468,10 @@ function buildBiography(data) {
 
   if (data.size || data.type) {
     parts.push(`<p><em>${data.size ?? ""} ${data.type ?? ""}${data.subtype ? ` (${data.subtype})` : ""}, ${data.alignment ?? ""}</em></p>`);
+  }
+
+  if (data.armor_desc) {
+    parts.push(`<p><strong>Armor:</strong> ${data.armor_desc}</p>`);
   }
 
   if (data.legendary_desc) {

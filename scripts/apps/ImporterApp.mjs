@@ -7,7 +7,7 @@ import { Open5eScraper } from "../scrapers/open5e.mjs";
 import { DDBScraper } from "../scrapers/ddb.mjs";
 import { Roll20Scraper } from "../scrapers/roll20.mjs";
 import { WikidotScraper } from "../scrapers/wikidot.mjs";
-import { importResult } from "../importer.mjs";
+import { importResult, generatePreview } from "../importer.mjs";
 
 const MODULE_ID = "fvtt-compendium-importer";
 
@@ -30,6 +30,8 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     actions: {
       search: ImporterApp.#onSearch,
       importResult: ImporterApp.#onImport,
+      previewResult: ImporterApp.#onPreview,
+      closePreview: ImporterApp.#onClosePreview,
     },
   };
 
@@ -45,6 +47,8 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
   #searchQuery = "";
   /** @type {Set<number>} indices currently importing */
   #importing = new Set();
+  #previewHtml = "";
+  #previewIndex = -1;
 
   constructor(options = {}) {
     super(options);
@@ -81,6 +85,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
       searchQuery: this.#searchQuery,
       hasResults: this.#results.length > 0,
       noResults: !this.#loading && this.#searchQuery && this.#results.length === 0,
+      previewHtml: this.#previewHtml,
     };
   }
 
@@ -115,6 +120,8 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#loading = true;
     this.#results = [];
     this.#importing.clear();
+    this.#previewHtml = "";
+    this.#previewIndex = -1;
     this.render();
 
     const enabledScrapers = this.#scrapers.filter((s) => s.isEnabled());
@@ -164,6 +171,29 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const input = container?.querySelector('input[name="query"]');
     const query = input?.value ?? "";
     await this.doSearch(query);
+  }
+
+  static #onPreview(event, target) {
+    // Don't trigger preview if clicking the import button
+    if (event.target.closest('[data-action="importResult"]')) return;
+    const index = parseInt(target.dataset.index);
+    const result = this.#results[index];
+    if (!result) return;
+    if (this.#previewIndex === index) {
+      // Toggle off
+      this.#previewHtml = "";
+      this.#previewIndex = -1;
+    } else {
+      this.#previewHtml = generatePreview(result);
+      this.#previewIndex = index;
+    }
+    this.render();
+  }
+
+  static #onClosePreview() {
+    this.#previewHtml = "";
+    this.#previewIndex = -1;
+    this.render();
   }
 
   static async #onImport(event, target) {

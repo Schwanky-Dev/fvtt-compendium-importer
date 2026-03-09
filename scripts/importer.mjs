@@ -111,6 +111,10 @@ async function importAsActor(result, data) {
 
   const actor = await Actor.create(actorData);
 
+  if (!actor) {
+    throw new Error(`Failed to create Actor "${actorData.name}". Check the console for validation errors.`);
+  }
+
   // Create embedded items
   if (embeddedItems.length > 0) {
     await actor.createEmbeddedDocuments("Item", embeddedItems);
