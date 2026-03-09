@@ -81,7 +81,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         typeBadge: this.#typeBadge(r),
         metaInfo: this.#metaInfo(r),
         bookBadge: r.documentTitle || "",
-        isOfficial: (r.documentTitle ?? "").includes("SRD"),
+        sourceBadgeColor: r.sourceBadgeColor || "#F44336",
       })),
       loading: this.#loading,
       searchQuery: this.#searchQuery,
@@ -156,6 +156,14 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         seen.add(key);
         return true;
       });
+
+      // Apply source filter
+      const sourceFilter = game.settings.get(MODULE_ID, "sourceFilter");
+      if (sourceFilter === "official") {
+        this.#results = this.#results.filter((r) => r.sourceTier === "official");
+      } else if (sourceFilter === "official+ua") {
+        this.#results = this.#results.filter((r) => r.sourceTier === "official" || r.sourceTier === "ua");
+      }
     } catch (err) {
       console.error(`${MODULE_ID} | Search failed:`, err);
       ui.notifications.error("Search failed. Check the console for details.");

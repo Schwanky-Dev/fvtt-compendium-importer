@@ -64,7 +64,8 @@ Hooks.once("init", () => {
     default: "all",
     choices: {
       all: "All Sources",
-      srd: "SRD Only (WotC)",
+      official: "Official WotC Only (green)",
+      "official+ua": "Official + Unearthed Arcana (green + yellow)",
     },
   });
 

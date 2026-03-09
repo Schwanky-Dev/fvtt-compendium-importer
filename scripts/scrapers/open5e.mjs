@@ -2,9 +2,40 @@ import { BaseScraper } from "./base.mjs";
 
 const API_BASE = "https://api.open5e.com/v1";
 
+/**
+ * Source tier classification.
+ * "official" = WotC published material
+ * "ua" = Unearthed Arcana, playtest, semi-official
+ * "thirdparty" = Kobold Press, Critical Role, community content
+ */
+const SOURCE_TIERS = {
+  "wotc-srd": "official",
+  // Open5e only carries the WotC SRD. All other sources are third-party publishers.
+  // If Open5e adds more WotC sources in the future, add them here.
+};
+
+/**
+ * Get the tier for a document slug. Anything not explicitly listed is third-party.
+ */
+export function getSourceTier(documentSlug) {
+  return SOURCE_TIERS[documentSlug] || "thirdparty";
+}
+
+/**
+ * Get badge color for a source tier.
+ */
+export function getSourceBadgeColor(tier) {
+  switch (tier) {
+    case "official": return "#4CAF50";   // Green — WotC official
+    case "ua": return "#FFC107";         // Yellow — Unearthed Arcana / playtest
+    case "thirdparty": return "#F44336"; // Red — third-party / homebrew
+    default: return "#F44336";
+  }
+}
+
 export class Open5eScraper extends BaseScraper {
   static id = "open5e";
-  static label = "Open5e (SRD)";
+  static label = "Open5e";
   static color = "#4CAF50";
   static requiresProxy = false;
 
@@ -93,6 +124,8 @@ export class Open5eScraper extends BaseScraper {
       sourceColor: Open5eScraper.color,
       documentTitle: item.document__title ?? "",
       documentSlug: item.document__slug ?? "",
+      sourceTier: getSourceTier(item.document__slug ?? ""),
+      sourceBadgeColor: getSourceBadgeColor(getSourceTier(item.document__slug ?? "")),
       _raw: item,
     };
 
