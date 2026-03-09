@@ -193,7 +193,7 @@ const ICON_MAP = {
   "lightning breath": "icons/magic/lightning/bolt-strike-blue.webp",
   "acid breath": "icons/magic/acid/projectile-faceted-glob.webp",
   "poison breath": "icons/magic/acid/projectile-faceted-glob.webp",
-  frightful presence: "icons/magic/control/fear-fright-shadow-monster.webp",
+  "frightful presence": "icons/magic/control/fear-fright-shadow-monster.webp",
   "eye rays": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
 };
 
