@@ -1,0 +1,46 @@
+{
+  "COMPIMPORTER": {
+    "Title": "Compendium Importer",
+    "Search": "Search",
+    "SearchPlaceholder": "Search for monsters, spells, items...",
+    "Import": "Import",
+    "ImportAs": "Import As",
+    "ImportActor": "Actor (NPC)",
+    "ImportItem": "Item",
+    "ImportJournal": "Journal Entry",
+    "Preview": "Preview",
+    "Close": "Close",
+    "Loading": "Searching...",
+    "NoResults": "No results found.",
+    "Source": "Source",
+    "Type": "Type",
+    "CR": "CR",
+    "Level": "Level",
+    "School": "School",
+    "Rarity": "Rarity",
+    "ImportSuccess": "Successfully imported {name}!",
+    "ImportError": "Failed to import: {error}",
+    "Settings": {
+      "EnableOpen5e": "Enable Open5e",
+      "EnableOpen5eHint": "Search the Open5e SRD API for monsters, spells, and items.",
+      "EnableDDB": "Enable D&D Beyond",
+      "EnableDDBHint": "Scrape D&D Beyond pages (requires proxy for CORS).",
+      "EnableRoll20": "Enable Roll20",
+      "EnableRoll20Hint": "Scrape Roll20 compendium pages (requires proxy for CORS).",
+      "DefaultImportType": "Default Import Type",
+      "DefaultImportTypeHint": "The default document type when importing content.",
+      "AutoCreateMacros": "Auto-Create Macros",
+      "AutoCreateMacrosHint": "Automatically create a macro folder with import macros on first load."
+    },
+    "Macros": {
+      "FolderName": "Compendium Importer",
+      "QuickMonster": "Quick Monster Import",
+      "QuickSpell": "Quick Spell Import",
+      "QuickItem": "Quick Item Import",
+      "SearchOpen5e": "Search Open5e",
+      "ImportByURL": "Import by URL"
+    },
+    "SidebarButton": "Import from Compendium",
+    "ChatCommand": "Usage: /import <search term>"
+  }
+}
