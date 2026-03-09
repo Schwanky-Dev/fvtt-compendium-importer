@@ -1,101 +1,111 @@
-# Compendium Importer for Foundry VTT v13
+# Compendium Importer for Foundry VTT
 
-Import monsters, spells, and items from **Open5e**, **D&D Beyond**, and **Roll20** directly into your Foundry VTT world.
+[![Foundry v12-v13](https://img.shields.io/badge/Foundry-v12--v13-informational)](https://foundryvtt.com) [![dnd5e v3+](https://img.shields.io/badge/dnd5e-v3%2B-informational)](https://github.com/foundryvtt/dnd5e) [![Version 1.5.0](https://img.shields.io/badge/version-1.5.0-green)](https://github.com/Schwanky-Dev/fvtt-compendium-importer/releases)
 
-![Foundry v13](https://img.shields.io/badge/Foundry-v13-green)
-![dnd5e](https://img.shields.io/badge/System-dnd5e%203.x-blue)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+Search and import monsters, spells, and items from multiple D&D 5e sources — Open5e, dnd5e.wikidot.com, D&D Beyond, and Roll20 — directly into your Foundry VTT world with one click. Results are automatically mapped to fully functional dnd5e system Actors and Items with parsed attacks, damage, spells, Active Effects, and more.
 
 ## Features
 
-- **Multi-Source Search** — Query Open5e, D&D Beyond, and Roll20 simultaneously
-- **3-Layer Pipeline** — Scraper → Mapper → Importer for clean data transformation
-- **Preview Before Import** — Full stat block preview styled like a D&D stat block
-- **Import As Anything** — Same content can become an Actor, Item, or Journal Entry
-- **Auto-Macros** — 5 ready-to-use macros created automatically on first load
-- **Chat Command** — Type `/import goblin` to search instantly
-- **Sidebar Button** — One-click access from the Actors tab
-- **ApplicationV2** — Built with Foundry v13's modern application framework
-
-## Scraper Status
-
-| Source | Status | CORS | Notes |
-|--------|--------|------|-------|
-| Open5e (SRD) | ✅ Fully Working | No issues | Public REST API, primary data source |
-| D&D Beyond | ⚠️ Experimental | Requires proxy | HTML scraping, CORS-blocked in browser |
-| Roll20 | ⚠️ Experimental | Requires proxy | HTML scraping, CORS-blocked in browser |
+- **Multi-source search** — Query Open5e API, Wikidot, D&D Beyond, and Roll20 simultaneously
+- **One-click import** — Auto-detects type: monsters become Actors (NPC), spells and items become Items
+- **Click-to-preview** — Inline stat block preview in the search results before importing
+- **Source tier badges** — 🟢 Green (official WotC), 🟡 Yellow (Unearthed Arcana), 🔴 Red (third-party)
+- **Source filter setting** — Restrict results to official-only, official + UA, or all sources
+- **Full attack parsing** — To-hit bonuses, damage dice + type, versatile damage, reach/range, save DCs, AoE targets
+- **Spellcaster spell resolution** — Parses spellcasting blocks and resolves each spell from the dnd5e system compendium (falls back to Open5e API)
+- **Magic item effect parsing** — Charges & recovery, attunement requirements, +X magical bonuses, Active Effects for damage resistance/immunity, stat overrides, AC bonuses, spell save DC bonuses, and spell attack bonuses
+- **Auto-assign weapon icons** — 50+ mapped weapon/attack names to Foundry core icons (bite, claw, longsword, breath weapons, etc.)
+- **`/import` chat command** — Type `/import goblin` in chat to search instantly
+- **Quick Import macro** — Auto-created macro with a dialog prompt for fast searching
+- **CORS proxy support** — Built-in proxy server for scraping DDB, Wikidot, and Roll20
 
 ## Installation
 
-### Manual ZIP
-1. Download the latest release ZIP from the [Releases](https://github.com/Schwanky-Dev/fvtt-compendium-importer/releases) page
-2. Extract into your Foundry `Data/modules/` directory
-3. Restart Foundry and enable the module in your world
+### Manifest URL (recommended)
 
-### Manifest URL
-Paste this URL into Foundry's **Install Module** dialog:
+In Foundry VTT, go to **Settings → Add-on Modules → Install Module** and paste:
+
 ```
 https://github.com/Schwanky-Dev/fvtt-compendium-importer/releases/latest/download/module.json
 ```
 
+### Manual Install
+
+Download the [latest release zip](https://github.com/Schwanky-Dev/fvtt-compendium-importer/releases) and extract it to your `Data/modules/fvtt-compendium-importer/` directory.
+
 ## Usage
 
 ### Search UI
-1. Click the **Import from Compendium** button in the Actors sidebar tab
-2. Type a search query (e.g., "goblin", "fireball", "longsword")
-3. Select a category filter (All, Monsters, Spells, Items)
-4. Click **Search**
 
-### Preview
-Click the 👁️ eye icon on any result to see a full stat block preview in the right panel.
+1. Open the **Actors** sidebar tab
+2. Click the **Import** button in the directory header
+3. Type a search query and press Enter or click Search
+4. Click any result to preview its stat block inline
+5. Click the **Import** button on a result to create it in your world
 
-### Import
-- **Auto Import** (📥) — Monsters become Actors, spells/items become Items
-- **As Actor** (👤) — Creates an NPC Actor with full abilities and action items
-- **As Item** (💼) — Creates a dnd5e Item (spell, weapon, equipment, etc.)
-- **As Journal** (📖) — Creates a Journal Entry with the formatted stat block
+Monsters are imported as NPC Actors with fully parsed actions, features, legendary actions, reactions, saving throws, skills, and spells. Spells and items are imported as Items.
 
-### Chat Command
+### `/import` Chat Command
+
+Type in the chat box:
+
 ```
 /import ancient red dragon
-/import fireball
-/import +1 longsword
 ```
 
-### Macros
-On first load (with Auto-Create Macros enabled), a "Compendium Importer" macro folder is created with:
-- **Quick Monster Import** — Prompts for a monster name, opens search
-- **Quick Spell Import** — Same for spells
-- **Quick Item Import** — Same for items
-- **Search Open5e** — Opens the full search UI
-- **Import by URL** — Paste an Open5e API URL to import directly
+This opens the Importer UI and immediately searches for the query.
 
-## Module Settings
+### Quick Import Macro
+
+On first load (if enabled), a **Quick Import** macro is created in a "Compendium Importer" folder. Run it from the hotbar to get a dialog prompt, type your query, and the Importer opens with results.
+
+## CORS Proxy
+
+D&D Beyond, Wikidot, and Roll20 block cross-origin requests. To use these sources, run the included CORS proxy:
+
+```bash
+cd modules/fvtt-compendium-importer/proxy
+node server.mjs
+```
+
+Options:
+
+```bash
+node server.mjs --port 8081 --allowed-origins http://localhost:30000
+```
+
+Then set the **CORS Proxy URL** in module settings to `http://localhost:8081`.
+
+The proxy only allows requests to a hardcoded allowlist of hosts (dndbeyond.com, roll20.net, dnd5e.wikidot.com, api.open5e.com).
+
+**Note:** Open5e works without a proxy — it has proper CORS headers.
+
+## Settings
 
 | Setting | Default | Description |
-|---------|---------|-------------|
-| Enable Open5e | ✅ On | Search the Open5e SRD API |
-| Enable D&D Beyond | ❌ Off | Scrape DDB pages (needs CORS proxy) |
-| Enable Roll20 | ❌ Off | Scrape Roll20 pages (needs CORS proxy) |
-| Default Import Type | Auto | What document type to create by default |
-| Auto-Create Macros | ✅ On | Create macro folder on first load |
+|---|---|---|
+| **Enable Open5e** | ✅ On | Search the Open5e SRD API |
+| **Enable Wikidot** | ✅ On | Scrape dnd5e.wikidot.com (requires CORS proxy) |
+| **Enable D&D Beyond** | ❌ Off | Scrape D&D Beyond pages (requires CORS proxy) |
+| **Enable Roll20** | ❌ Off | Scrape Roll20 compendium (requires CORS proxy) |
+| **Source Filter** | All | Filter results: All Sources / Official WotC Only / Official + UA |
+| **CORS Proxy URL** | *(empty)* | URL of proxy server (e.g. `http://localhost:8081`) |
+| **Auto-Create Macros** | ✅ On | Create Quick Import macro on first load |
+
+## Compatibility
+
+- **Foundry VTT:** v12 – v13 (verified on v13)
+- **System:** dnd5e v3.0.0+
+- **Browsers:** Any modern browser supported by Foundry
 
 ## Screenshots
 
-*Coming soon*
-
-## Requirements
-
-- Foundry VTT v12+ (verified on v13)
-- dnd5e system v3.0+
+*Coming soon.*
 
 ## Contributing
 
-1. Fork the repo
-2. Create a feature branch
-3. Make your changes
-4. Submit a PR
+Contributions welcome! Fork the repo, make your changes, and open a PR. Please keep changes focused and test with both Foundry v12 and v13.
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+[MIT](LICENSE)
