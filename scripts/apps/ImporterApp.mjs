@@ -6,6 +6,7 @@
 import { Open5eScraper } from "../scrapers/open5e.mjs";
 import { DDBScraper } from "../scrapers/ddb.mjs";
 import { Roll20Scraper } from "../scrapers/roll20.mjs";
+import { WikidotScraper } from "../scrapers/wikidot.mjs";
 import { generatePreview, importResult } from "../importer.mjs";
 
 const MODULE_ID = "fvtt-compendium-importer";
@@ -67,7 +68,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   constructor(options = {}) {
     super(options);
-    this.#scrapers = [new Open5eScraper(), new DDBScraper(), new Roll20Scraper()];
+    this.#scrapers = [new Open5eScraper(), new WikidotScraper(), new DDBScraper(), new Roll20Scraper()];
     this.#importType = game.settings.get(MODULE_ID, "defaultImportType") ?? "auto";
   }
 

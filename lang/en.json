@@ -27,6 +27,8 @@
       "EnableDDBHint": "Scrape D&D Beyond pages (requires proxy for CORS).",
       "EnableRoll20": "Enable Roll20",
       "EnableRoll20Hint": "Scrape Roll20 compendium pages (requires proxy for CORS).",
+      "EnableWikidot": "Enable 5e Wikidot",
+      "EnableWikidotHint": "Scrape dnd5e.wikidot.com pages (requires proxy for CORS). Enabled by default — large SRD coverage.",
       "DefaultImportType": "Default Import Type",
       "DefaultImportTypeHint": "The default document type when importing content.",
       "AutoCreateMacros": "Auto-Create Macros",
