@@ -28,14 +28,14 @@ Import monsters, spells, and items from **Open5e**, **D&D Beyond**, and **Roll20
 ## Installation
 
 ### Manual ZIP
-1. Download the latest release ZIP from the [Releases](https://github.com/gage/fvtt-compendium-importer/releases) page
+1. Download the latest release ZIP from the [Releases](https://github.com/Schwanky-Dev/fvtt-compendium-importer/releases) page
 2. Extract into your Foundry `Data/modules/` directory
 3. Restart Foundry and enable the module in your world
 
 ### Manifest URL
 Paste this URL into Foundry's **Install Module** dialog:
 ```
-https://github.com/gage/fvtt-compendium-importer/releases/latest/download/module.json
+https://github.com/Schwanky-Dev/fvtt-compendium-importer/releases/latest/download/module.json
 ```
 
 ## Usage
