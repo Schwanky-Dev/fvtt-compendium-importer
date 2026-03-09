@@ -52,5 +52,7 @@ export class BaseScraper {
  * @property {string} [school] - Spell school
  * @property {string} [rarity] - Item rarity
  * @property {string} [type_display] - e.g. "Large beast"
+ * @property {string} [documentTitle] - Source book name (e.g. "SRD 5.1", "Tome of Beasts")
+ * @property {string} [documentSlug] - Source book slug (e.g. "wotc-srd")
  * @property {object} [_raw] - Raw API data for preview/import
  */

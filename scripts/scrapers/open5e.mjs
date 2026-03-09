@@ -18,16 +18,31 @@ export class Open5eScraper extends BaseScraper {
     const endpoints = this._getEndpoints(category);
     const results = [];
 
+    // Check source filter setting
+    let sourceFilter;
+    try {
+      sourceFilter = game.settings.get("fvtt-compendium-importer", "sourceFilter");
+    } catch {
+      sourceFilter = "all";
+    }
+
     const fetches = endpoints.map(async (ep) => {
       try {
-        const url = `${API_BASE}${ep.path}?search=${encodeURIComponent(query)}&limit=20`;
+        let url = `${API_BASE}${ep.path}?search=${encodeURIComponent(query)}&limit=20`;
+        // If filtering to SRD only, add document__slug filter
+        if (sourceFilter === "srd") {
+          url += `&document__slug=wotc-srd`;
+        }
         const response = await fetch(url);
         if (!response.ok) return;
         const data = await response.json();
         if (!data.results) return;
 
         for (const item of data.results) {
-          results.push(this._mapResult(item, ep.type));
+          const mapped = this._mapResult(item, ep.type);
+          // Client-side filter for non-SRD if needed
+          if (sourceFilter === "srd" && mapped.documentSlug !== "wotc-srd") continue;
+          results.push(mapped);
         }
       } catch (err) {
         console.warn(`Compendium Importer | Open5e search failed for ${ep.path}:`, err);
@@ -76,6 +91,8 @@ export class Open5eScraper extends BaseScraper {
       source: Open5eScraper.id,
       sourceLabel: Open5eScraper.label,
       sourceColor: Open5eScraper.color,
+      documentTitle: item.document__title ?? "",
+      documentSlug: item.document__slug ?? "",
       _raw: item,
     };
 

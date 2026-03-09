@@ -30,6 +30,7 @@
               <span class="ci-name">{{this.name}}</span>
               <span class="ci-badge ci-badge-type">{{this.typeBadge}}</span>
               <span class="ci-badge ci-badge-source" style="background:{{this.sourceColor}}">{{this.sourceLabel}}</span>
+              {{#if this.bookBadge}}<span class="ci-badge {{#if this.isOfficial}}ci-badge-book-official{{else}}ci-badge-book-3p{{/if}}">{{this.bookBadge}}</span>{{/if}}
               {{#if this.metaInfo}}<span class="ci-meta">{{this.metaInfo}}</span>{{/if}}
             </div>
             <button type="button" data-action="importResult" data-index="{{this.index}}"

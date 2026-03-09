@@ -80,6 +80,8 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         importing: this.#importing.has(i),
         typeBadge: this.#typeBadge(r),
         metaInfo: this.#metaInfo(r),
+        bookBadge: r.documentTitle || "",
+        isOfficial: (r.documentTitle ?? "").includes("SRD"),
       })),
       loading: this.#loading,
       searchQuery: this.#searchQuery,

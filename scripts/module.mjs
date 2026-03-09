@@ -55,6 +55,19 @@ Hooks.once("init", () => {
     default: false,
   });
 
+  game.settings.register(MODULE_ID, "sourceFilter", {
+    name: "COMPIMPORTER.Settings.SourceFilter",
+    hint: "COMPIMPORTER.Settings.SourceFilterHint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "all",
+    choices: {
+      all: "All Sources",
+      srd: "SRD Only (WotC)",
+    },
+  });
+
   game.settings.register(MODULE_ID, "autoCreateMacros", {
     name: "COMPIMPORTER.Settings.AutoCreateMacros",
     hint: "COMPIMPORTER.Settings.AutoCreateMacrosHint",
