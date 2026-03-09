@@ -2,6 +2,8 @@
  * Maps Open5e monster JSON → Foundry dnd5e Actor (NPC) data.
  */
 
+const DEFAULT_ICON = "icons/svg/mystery-man.svg";
+
 const ABILITY_MAP = {
   strength: "str",
   dexterity: "dex",
@@ -11,127 +13,77 @@ const ABILITY_MAP = {
   charisma: "cha",
 };
 
+const ABILITY_NAME_TO_SHORT = {
+  strength: "str", dexterity: "dex", constitution: "con",
+  intelligence: "int", wisdom: "wis", charisma: "cha",
+  str: "str", dex: "dex", con: "con", int: "int", wis: "wis", cha: "cha",
+};
+
 const SIZE_MAP = {
-  Tiny: "tiny",
-  Small: "sm",
-  Medium: "med",
-  Large: "lg",
-  Huge: "huge",
-  Gargantuan: "grg",
+  Tiny: "tiny", Small: "sm", Medium: "med",
+  Large: "lg", Huge: "huge", Gargantuan: "grg",
 };
 
 const ALIGNMENT_MAP = {
-  "lawful good": "lg",
-  "neutral good": "ng",
-  "chaotic good": "cg",
-  "lawful neutral": "ln",
-  "neutral": "tn",
-  "true neutral": "tn",
-  "chaotic neutral": "cn",
-  "lawful evil": "le",
-  "neutral evil": "ne",
-  "chaotic evil": "ce",
-  "unaligned": "un",
-  "any alignment": "any",
+  "lawful good": "lg", "neutral good": "ng", "chaotic good": "cg",
+  "lawful neutral": "ln", "neutral": "tn", "true neutral": "tn",
+  "chaotic neutral": "cn", "lawful evil": "le", "neutral evil": "ne",
+  "chaotic evil": "ce", "unaligned": "un", "any alignment": "any",
 };
 
-/**
- * Parse a speed string like "30 ft., fly 60 ft., swim 30 ft." into dnd5e format.
- */
+// ─── Speed ────────────────────────────────────────────────────────────────────
+
 function parseSpeed(speedObj) {
   if (!speedObj) return { value: 30, units: "ft" };
-
   if (typeof speedObj === "string") {
     const match = speedObj.match(/(\d+)/);
     return { value: match ? parseInt(match[1]) : 30, units: "ft" };
   }
-
-  const result = {};
-  if (speedObj.walk !== undefined) {
-    result.value = typeof speedObj.walk === "number" ? speedObj.walk : parseInt(speedObj.walk) || 30;
-  } else {
-    result.value = 30;
-  }
-  result.units = "ft";
-
+  const result = {
+    value: speedObj.walk !== undefined
+      ? (typeof speedObj.walk === "number" ? speedObj.walk : parseInt(speedObj.walk) || 30)
+      : 30,
+    units: "ft",
+  };
   for (const [key, val] of Object.entries(speedObj)) {
     if (key === "walk" || key === "hover" || key === "notes") continue;
     const num = typeof val === "number" ? val : parseInt(val);
-    if (!isNaN(num) && num > 0) {
-      result[key] = num;
-    }
+    if (!isNaN(num) && num > 0) result[key] = num;
   }
   if (speedObj.hover) result.hover = true;
-
   return result;
 }
 
-/**
- * Parse AC — Open5e gives armor_class as a number and armor_desc as string.
- */
+// ─── AC ───────────────────────────────────────────────────────────────────────
+
 function parseAC(monster) {
   let raw = monster.armor_class ?? 10;
-  // Ensure AC is a plain number — Open5e sometimes returns strings like "10 (leather armor)"
   if (typeof raw === "string") {
-    const match = raw.match(/(\d+)/);
-    raw = match ? parseInt(match[1]) : 10;
+    const m = raw.match(/(\d+)/);
+    raw = m ? parseInt(m[1]) : 10;
   }
-  const ac = typeof raw === "number" ? raw : parseInt(raw) || 10;
-  return {
-    flat: ac,
-    calc: "flat",
-    formula: "",
-  };
+  return { flat: typeof raw === "number" ? raw : parseInt(raw) || 10, calc: "flat", formula: "" };
 }
 
-/**
- * Parse senses string: "darkvision 60 ft., passive Perception 14"
- */
-function parseSenses(sensesStr) {
-  const senses = {
-    darkvision: 0,
-    blindsight: 0,
-    tremorsense: 0,
-    truesight: 0,
-    units: "ft",
-    special: "",
-  };
-  if (!sensesStr) return senses;
+// ─── Senses ───────────────────────────────────────────────────────────────────
 
-  const parts = sensesStr.split(",").map((s) => s.trim());
-  for (const part of parts) {
+function parseSenses(sensesStr) {
+  const senses = { darkvision: 0, blindsight: 0, tremorsense: 0, truesight: 0, units: "ft", special: "" };
+  if (!sensesStr) return senses;
+  for (const part of sensesStr.split(",").map(s => s.trim())) {
     const lower = part.toLowerCase();
     for (const sense of ["darkvision", "blindsight", "tremorsense", "truesight"]) {
       if (lower.startsWith(sense)) {
-        const match = part.match(/(\d+)/);
-        if (match) senses[sense] = parseInt(match[1]);
+        const m = part.match(/(\d+)/);
+        if (m) senses[sense] = parseInt(m[1]);
       }
-    }
-    if (lower.startsWith("passive perception")) {
-      // handled elsewhere via skills
     }
   }
   return senses;
 }
 
-/**
- * Parse CR to proficiency bonus.
- */
-function crToProf(cr) {
-  const num = typeof cr === "string" ? eval(cr) : cr;
-  if (num < 5) return 2;
-  if (num < 9) return 3;
-  if (num < 13) return 4;
-  if (num < 17) return 5;
-  if (num < 21) return 6;
-  if (num < 25) return 7;
-  if (num < 29) return 8;
-  return 9;
-}
+// ─── CR helpers ───────────────────────────────────────────────────────────────
 
-/**
- * Parse CR string to numeric value.
- */
 function parseCR(cr) {
   if (cr === "1/8") return 0.125;
   if (cr === "1/4") return 0.25;
@@ -139,12 +91,21 @@ function parseCR(cr) {
   return parseFloat(cr) || 0;
 }
 
+// ─── Icon resolution ──────────────────────────────────────────────────────────
+
 /**
- * Icon mapping for common weapons, attacks, and action types.
- * Uses well-known Foundry core icon paths.
+ * Returns the preferred path if it starts with "icons/" (Foundry core, always exists).
+ * Falls back through alternatives, ultimately to DEFAULT_ICON.
  */
+function resolveIcon(preferredPath, ...fallbacks) {
+  for (const p of [preferredPath, ...fallbacks]) {
+    if (p && typeof p === "string" && p.startsWith("icons/")) return p;
+  }
+  return DEFAULT_ICON;
+}
+
+/** All paths below MUST start with "icons/" (Foundry core). */
 const ICON_MAP = {
-  // Weapons
   bite: "icons/skills/melee/mouth-bite-fangs-red.webp",
   claw: "icons/skills/melee/strike-claw-red.webp",
   claws: "icons/skills/melee/strike-claw-red.webp",
@@ -186,7 +147,6 @@ const ICON_MAP = {
   crossbow: "icons/weapons/crossbows/crossbow-simple-brown.webp",
   sling: "icons/weapons/slings/sling-simple-leather.webp",
   rock: "icons/weapons/ammunition/rock-smooth.webp",
-  // Breath weapons & special
   "breath weapon": "icons/magic/fire/beam-jet-stream-embers.webp",
   "fire breath": "icons/magic/fire/beam-jet-stream-embers.webp",
   "cold breath": "icons/magic/water/projectile-icecicle.webp",
@@ -197,7 +157,6 @@ const ICON_MAP = {
   "eye rays": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
 };
 
-/** Damage type to fallback icon */
 const DAMAGE_TYPE_ICONS = {
   fire: "icons/magic/fire/beam-jet-stream-embers.webp",
   cold: "icons/magic/water/projectile-icecicle.webp",
@@ -219,93 +178,204 @@ const DEFAULT_RANGED_ICON = "icons/weapons/bows/shortbow-recurve.webp";
 const DEFAULT_SPELL_ICON = "icons/magic/symbols/runes-star-pentagon-blue.webp";
 const DEFAULT_FEAT_ICON = "icons/skills/targeting/target-strike-triple-blue.webp";
 
-/**
- * Pick the best icon for a monster action/feature.
- */
-function pickActionIcon(action, actionType) {
+function pickActionIcon(action) {
   const name = (action.name ?? "").toLowerCase().trim();
   const desc = (action.desc ?? "").toLowerCase();
 
-  // Direct name match
-  if (ICON_MAP[name]) return ICON_MAP[name];
-
-  // Partial name match (e.g. "Fire Breath (Recharge 5-6)" matches "fire breath")
+  if (ICON_MAP[name]) return resolveIcon(ICON_MAP[name]);
   for (const [key, icon] of Object.entries(ICON_MAP)) {
-    if (name.includes(key)) return icon;
+    if (name.includes(key)) return resolveIcon(icon);
   }
-
-  // By action type / damage type
   const dmgMatch = desc.match(/(\w+)\s+damage/i);
   if (dmgMatch) {
-    const dmgType = dmgMatch[1].toLowerCase();
-    if (DAMAGE_TYPE_ICONS[dmgType]) return DAMAGE_TYPE_ICONS[dmgType];
+    const dt = dmgMatch[1].toLowerCase();
+    if (DAMAGE_TYPE_ICONS[dt]) return resolveIcon(DAMAGE_TYPE_ICONS[dt]);
   }
-
-  // Melee vs ranged
-  if (desc.includes("melee weapon attack") || desc.includes("melee attack")) return DEFAULT_MELEE_ICON;
-  if (desc.includes("ranged weapon attack") || desc.includes("ranged attack")) return DEFAULT_RANGED_ICON;
-  if (desc.includes("spell") || desc.includes("spellcasting")) return DEFAULT_SPELL_ICON;
-
+  if (/melee.*attack/i.test(desc)) return DEFAULT_MELEE_ICON;
+  if (/ranged.*attack/i.test(desc)) return DEFAULT_RANGED_ICON;
+  if (/spell|spellcasting/i.test(desc)) return DEFAULT_SPELL_ICON;
   return DEFAULT_FEAT_ICON;
 }
 
+// ─── Action / Attack Parsing ──────────────────────────────────────────────────
+
 /**
- * Build an action item for the monster.
+ * Determine the dnd5e action type from a description string.
+ */
+function parseActionType(desc) {
+  if (!desc) return null;
+  if (/Melee or Ranged Weapon Attack/i.test(desc)) return "mwak";
+  if (/Melee Weapon Attack/i.test(desc)) return "mwak";
+  if (/Ranged Weapon Attack/i.test(desc)) return "rwak";
+  if (/Melee Spell Attack/i.test(desc)) return "msak";
+  if (/Ranged Spell Attack/i.test(desc)) return "rsak";
+  if (/DC\s*\d+\s*\w+\s*saving throw/i.test(desc)) return "save";
+  return null;
+}
+
+/**
+ * Parse attack bonus from description.
+ */
+function parseAttackBonus(desc) {
+  const m = desc?.match(/\+(\d+) to hit/i);
+  return m ? m[1] : null;
+}
+
+/**
+ * Parse primary and additional damage from a Hit: line.
+ */
+function parseDamage(desc) {
+  if (!desc) return { parts: [], versatile: "" };
+  const parts = [];
+  let versatile = "";
+
+  // Primary damage: "Hit: 6 (1d8 + 2) slashing damage"
+  const primary = desc.match(/Hit:\s*\d+\s*\((\d+d\d+(?:\s*[+\-]\s*\d+)?)\)\s*(\w+)\s*damage/i);
+  if (primary) {
+    parts.push([primary[1].replace(/\s+/g, ""), primary[2].toLowerCase()]);
+  }
+
+  // Versatile: "or 7 (1d10 + 2) slashing damage if used with two hands"
+  const vers = desc.match(/or\s+\d+\s*\((\d+d\d+(?:\s*[+\-]\s*\d+)?)\)\s*\w+\s*damage\s+if used with two hands/i);
+  if (vers) {
+    versatile = vers[1].replace(/\s+/g, "");
+  }
+
+  // Additional damage: "plus 3 (1d6) fire damage"
+  const addlRe = /plus\s+\d+\s*\((\d+d\d+(?:\s*[+\-]\s*\d+)?)\)\s*(\w+)\s*damage/gi;
+  let addl;
+  while ((addl = addlRe.exec(desc)) !== null) {
+    parts.push([addl[1].replace(/\s+/g, ""), addl[2].toLowerCase()]);
+  }
+
+  // For save-based abilities without "Hit:" line, parse "take X (dice) type damage"
+  if (parts.length === 0) {
+    const saveDmg = desc.match(/(?:takes?|taking|deals?)\s+\d+\s*\((\d+d\d+(?:\s*[+\-]\s*\d+)?)\)\s*(\w+)\s*damage/i);
+    if (saveDmg) {
+      parts.push([saveDmg[1].replace(/\s+/g, ""), saveDmg[2].toLowerCase()]);
+    }
+  }
+
+  return { parts, versatile };
+}
+
+/**
+ * Parse range from description.
+ */
+function parseRange(desc) {
+  if (!desc) return null;
+  const ranged = desc.match(/range\s+(\d+)\/(\d+)\s*ft/i);
+  if (ranged) return { value: parseInt(ranged[1]), long: parseInt(ranged[2]), units: "ft" };
+  const rangedSimple = desc.match(/range\s+(\d+)\s*ft/i);
+  if (rangedSimple) return { value: parseInt(rangedSimple[1]), units: "ft" };
+  const reach = desc.match(/reach\s+(\d+)\s*ft/i);
+  if (reach) return { value: parseInt(reach[1]), units: "ft" };
+  return null;
+}
+
+/**
+ * Parse save DC from description.
+ */
+function parseSaveDC(desc) {
+  if (!desc) return null;
+  const m = desc.match(/DC\s*(\d+)\s*(\w+)\s*saving throw/i);
+  if (!m) return null;
+  const ability = ABILITY_NAME_TO_SHORT[m[2].toLowerCase()];
+  return ability ? { ability, dc: parseInt(m[1]), scaling: "flat" } : null;
+}
+
+/**
+ * Parse area-of-effect target from description.
+ */
+function parseAoETarget(desc) {
+  if (!desc) return null;
+  const m = desc.match(/(\d+)-foot[- ]?(cone|line|cube|sphere|radius)/i);
+  if (!m) return null;
+  return { value: parseInt(m[1]), type: m[2].toLowerCase(), units: "ft" };
+}
+
+/**
+ * Build a fully-populated action item for a monster.
  */
 function buildActionItem(action, type = "natural") {
+  const desc = action.desc || "";
+  const actionType = parseActionType(desc);
+  const isWeaponAttack = actionType === "mwak" || actionType === "rwak";
+  const isSave = actionType === "save";
+
   const item = {
     name: action.name,
-    type: "feat",
-    img: pickActionIcon(action, type),
+    type: isWeaponAttack ? "weapon" : "feat",
+    img: pickActionIcon(action),
     system: {
-      description: { value: action.desc || "" },
+      description: { value: desc },
       source: { custom: "Compendium Importer" },
-      activation: { type: "action", cost: 1 },
-      type: {
-        value: type === "legendary" ? "legendary" : type === "lair" ? "lair" : "monster",
+      activation: {
+        type: type === "legendary" ? "legendary" : type === "lair" ? "lair" : "action",
+        cost: 1,
       },
     },
   };
 
-  // Try to parse attack bonus and damage from desc
-  const atkMatch = action.desc?.match(/\+(\d+) to hit/);
-  if (atkMatch) {
-    item.system.actionType = action.desc.match(/melee/i) ? "mwak" : "rwak";
-    item.system.attack = { bonus: atkMatch[1], flat: true };
-  }
-
-  // Parse damage
-  const dmgMatch = action.desc?.match(/(\d+d\d+(?:\s*\+\s*\d+)?)\s+(\w+)\s+damage/i);
-  if (dmgMatch) {
-    const dmgFormula = dmgMatch[1].replace(/\s+/g, "");
-    const dmgType = dmgMatch[2].toLowerCase();
-    item.system.damage = {
-      parts: [[dmgFormula, dmgType]],
+  // For feat-type items, set the subtype
+  if (item.type === "feat") {
+    item.system.type = {
+      value: type === "legendary" ? "legendary" : type === "lair" ? "lair" : "monster",
     };
   }
 
-  // Parse reach/range
-  const reachMatch = action.desc?.match(/reach\s+(\d+)\s*ft/i);
-  const rangeMatch = action.desc?.match(/range\s+(\d+)\/(\d+)\s*ft/i);
-  if (reachMatch) {
-    item.system.range = { value: parseInt(reachMatch[1]), units: "ft" };
-  } else if (rangeMatch) {
-    item.system.range = {
-      value: parseInt(rangeMatch[1]),
-      long: parseInt(rangeMatch[2]),
-      units: "ft",
-    };
+  // Legendary action cost
+  if (type === "legendary") {
+    const costMatch = desc.match(/costs?\s+(\d+)\s+actions?/i);
+    if (costMatch) item.system.activation.cost = parseInt(costMatch[1]);
+  }
+
+  // Action type
+  if (actionType) {
+    item.system.actionType = actionType;
+  }
+
+  // Attack bonus (weapon and spell attacks)
+  if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
+    const bonus = parseAttackBonus(desc);
+    if (bonus) {
+      item.system.attack = { bonus, flat: true };
+      item.system.ability = ""; // flat bonus, don't derive from ability
+    }
+  }
+
+  // Damage
+  const { parts, versatile } = parseDamage(desc);
+  if (parts.length > 0) {
+    item.system.damage = { parts };
+    if (versatile) item.system.damage.versatile = versatile;
+  }
+
+  // Range
+  const range = parseRange(desc);
+  if (range) item.system.range = range;
+
+  // Target
+  if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
+    item.system.target = { value: 1, type: "creature" };
+  }
+
+  // Save DC
+  if (isSave) {
+    const save = parseSaveDC(desc);
+    if (save) item.system.save = save;
+    // AoE target
+    const aoe = parseAoETarget(desc);
+    if (aoe) item.system.target = aoe;
   }
 
   return item;
 }
 
-/**
- * Parse skill proficiencies from Open5e skills object.
- */
+// ─── Skills ───────────────────────────────────────────────────────────────────
+
 function parseSkills(skills) {
   if (!skills) return {};
-  const result = {};
   const SKILL_MAP = {
     acrobatics: "acr", "animal handling": "ani", arcana: "arc",
     athletics: "ath", deception: "dec", history: "his",
@@ -314,18 +384,119 @@ function parseSkills(skills) {
     performance: "prf", persuasion: "per", religion: "rel",
     "sleight of hand": "slt", stealth: "ste", survival: "sur",
   };
-
+  const result = {};
   for (const [name, val] of Object.entries(skills)) {
     const key = SKILL_MAP[name.toLowerCase()];
-    if (key) {
-      result[key] = { value: 1, bonus: val };
-    }
+    if (key) result[key] = { value: 1, bonus: val };
   }
   return result;
 }
 
+// ─── Spellcasting Parser ──────────────────────────────────────────────────────
+
+/**
+ * Parse spellcasting from special_abilities and spell_list.
+ * Returns { spellcastingAbility, spellDC, spellAttackBonus, spellSlots, spellNames }
+ * where spellNames is an array of { name, mode, uses } objects.
+ *   mode: "prepared" (regular slots), "innate" (innate), "atwill" (at-will/cantrip)
+ *   uses: null for prepared/cantrip, number for innate (X/day)
+ */
+export function parseSpellcasting(specialAbilities) {
+  if (!specialAbilities || !specialAbilities.length) return null;
+
+  const scAbilities = specialAbilities.filter(a =>
+    /spellcasting|innate spellcasting/i.test(a.name)
+  );
+  if (scAbilities.length === 0) return null;
+
+  let spellcastingAbility = null;
+  let spellDC = null;
+  let spellAttackBonus = null;
+  const spellSlots = {}; // { spell1: { value: N, max: N }, ... }
+  const spellNames = [];
+
+  for (const ab of scAbilities) {
+    const desc = ab.desc || "";
+    const isInnate = /innate/i.test(ab.name);
+
+    // Parse spellcasting ability
+    let abMatch = desc.match(/(\w+)\s+is\s+(?:their|its|his|her)\s+spellcasting ability/i);
+    if (!abMatch) abMatch = desc.match(/spellcasting ability is (\w+)/i);
+    if (abMatch && !spellcastingAbility) {
+      spellcastingAbility = ABILITY_NAME_TO_SHORT[abMatch[1].toLowerCase()] || null;
+    }
+
+    // Parse spell save DC
+    const dcMatch = desc.match(/spell save DC\s*(\d+)/i);
+    if (dcMatch && !spellDC) spellDC = parseInt(dcMatch[1]);
+
+    // Parse spell attack bonus
+    const atkMatch = desc.match(/\+(\d+)\s+to hit with spell attacks/i);
+    if (atkMatch && !spellAttackBonus) spellAttackBonus = parseInt(atkMatch[1]);
+
+    if (isInnate) {
+      // "At will: detect magic, mage hand"
+      const atWillMatch = desc.match(/At will:\s*(.+)/im);
+      if (atWillMatch) {
+        for (const name of splitSpellList(atWillMatch[1])) {
+          spellNames.push({ name, mode: "atwill", uses: null });
+        }
+      }
+      // "3/day each: counterspell, fireball"
+      const dailyRe = /(\d+)\/day(?:\s+each)?:\s*(.+)/gim;
+      let dailyMatch;
+      while ((dailyMatch = dailyRe.exec(desc)) !== null) {
+        const uses = parseInt(dailyMatch[1]);
+        for (const name of splitSpellList(dailyMatch[2])) {
+          spellNames.push({ name, mode: "innate", uses });
+        }
+      }
+    } else {
+      // Regular spellcasting
+      // "Cantrips (at will): fire bolt, light, mage hand"
+      const cantripMatch = desc.match(/Cantrips\s*\(at will\):\s*(.+)/im);
+      if (cantripMatch) {
+        for (const name of splitSpellList(cantripMatch[1])) {
+          spellNames.push({ name, mode: "atwill", uses: null });
+        }
+      }
+
+      // "1st level (4 slots): detect magic, mage armor"
+      const slotRe = /(\d+)(?:st|nd|rd|th) level \((\d+) slots?\):\s*(.+)/gim;
+      let slotMatch;
+      while ((slotMatch = slotRe.exec(desc)) !== null) {
+        const level = parseInt(slotMatch[1]);
+        const slots = parseInt(slotMatch[2]);
+        spellSlots[`spell${level}`] = { value: slots, max: slots };
+        for (const name of splitSpellList(slotMatch[3])) {
+          spellNames.push({ name, mode: "prepared", uses: null, level });
+        }
+      }
+    }
+  }
+
+  if (spellNames.length === 0) return null;
+
+  return { spellcastingAbility, spellDC, spellAttackBonus, spellSlots, spellNames };
+}
+
+/**
+ * Split a comma-separated spell list, stopping at newlines or next section headers.
+ */
+function splitSpellList(str) {
+  // Cut at newline or next section header
+  const cut = str.split(/\n/)[0];
+  return cut.split(",")
+    .map(s => s.replace(/\*+/g, "").trim()) // remove asterisks (used for material component markers)
+    .filter(s => s.length > 0 && !s.match(/^\d/)); // filter out empty or stray numbers
+}
+
+// ─── Main Mapper ──────────────────────────────────────────────────────────────
+
 /**
  * Main mapper: Open5e monster → dnd5e Actor data.
+ * Returns { actorData, spellcasting } where spellcasting may be null.
+ * The importer uses spellcasting for async spell lookups.
  */
 export function mapMonster(data) {
   const cr = parseCR(data.challenge_rating);
@@ -333,9 +504,7 @@ export function mapMonster(data) {
   // Build abilities
   const abilities = {};
   for (const [long, short] of Object.entries(ABILITY_MAP)) {
-    abilities[short] = {
-      value: data[long] ?? 10,
-    };
+    abilities[short] = { value: data[long] ?? 10 };
   }
 
   // Build items from actions
@@ -355,10 +524,12 @@ export function mapMonster(data) {
 
   if (data.special_abilities) {
     for (const ability of data.special_abilities) {
+      // Skip spellcasting entries — they'll be handled separately
+      if (/^(?:innate )?spellcasting$/i.test(ability.name)) continue;
       items.push({
         name: ability.name,
         type: "feat",
-        img: pickActionIcon(ability, "special"),
+        img: pickActionIcon(ability),
         system: {
           description: { value: ability.desc || "" },
           type: { value: "monster" },
@@ -373,7 +544,7 @@ export function mapMonster(data) {
       items.push({
         name: reaction.name,
         type: "feat",
-        img: pickActionIcon(reaction, "reaction"),
+        img: pickActionIcon(reaction),
         system: {
           description: { value: reaction.desc || "" },
           type: { value: "monster" },
@@ -383,17 +554,6 @@ export function mapMonster(data) {
     }
   }
 
-  // Build legendary action description
-  let legendaryDesc = "";
-  if (data.legendary_desc) {
-    legendaryDesc = data.legendary_desc;
-  }
-
-  // Build lair actions description
-  let lairDesc = "";
-  if (data.lair_desc) {
-    lairDesc = data.lair_desc;
-  }
   if (data.lair_actions) {
     for (const action of data.lair_actions) {
       items.push(buildActionItem(action, "lair"));
@@ -407,15 +567,18 @@ export function mapMonster(data) {
     intelligence_save: "int", wisdom_save: "wis", charisma_save: "cha",
   };
   for (const [field, short] of Object.entries(saveFields)) {
-    if (data[field] != null) {
-      saves[short] = { value: 1, bonus: data[field] };
-    }
+    if (data[field] != null) saves[short] = { value: 1, bonus: data[field] };
   }
 
-  // Build the actor data
+  // Parse spellcasting
+  const spellcasting = parseSpellcasting(data.special_abilities);
+
+  // Build base actor data
   const actorData = {
     name: data.name,
     type: "npc",
+    img: DEFAULT_ICON,
+    prototypeToken: { texture: { src: DEFAULT_ICON } },
     system: {
       abilities,
       attributes: {
@@ -429,9 +592,7 @@ export function mapMonster(data) {
         senses: parseSenses(data.senses ?? ""),
       },
       details: {
-        biography: {
-          value: buildBiography(data),
-        },
+        biography: { value: buildBiography(data) },
         cr,
         type: {
           value: (data.type ?? "").toLowerCase(),
@@ -454,38 +615,32 @@ export function mapMonster(data) {
       skills: parseSkills(data.skills),
     },
     items,
-    prpiority: {},
   };
 
-  return actorData;
+  // Apply spellcasting attributes to actor data
+  if (spellcasting) {
+    if (spellcasting.spellcastingAbility) {
+      actorData.system.attributes.spellcasting = spellcasting.spellcastingAbility;
+    }
+    if (Object.keys(spellcasting.spellSlots).length > 0) {
+      actorData.system.spells = spellcasting.spellSlots;
+    }
+  }
+
+  return { actorData, spellcasting };
 }
 
-/**
- * Build biography HTML from monster data.
- */
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function buildBiography(data) {
   const parts = [];
-
   if (data.size || data.type) {
     parts.push(`<p><em>${data.size ?? ""} ${data.type ?? ""}${data.subtype ? ` (${data.subtype})` : ""}, ${data.alignment ?? ""}</em></p>`);
   }
-
-  if (data.armor_desc) {
-    parts.push(`<p><strong>Armor:</strong> ${data.armor_desc}</p>`);
-  }
-
-  if (data.legendary_desc) {
-    parts.push(`<h3>Legendary Actions</h3><p>${data.legendary_desc}</p>`);
-  }
-
-  if (data.lair_desc) {
-    parts.push(`<h3>Lair Actions</h3><p>${data.lair_desc}</p>`);
-  }
-
-  if (data.desc) {
-    parts.push(`<h3>Description</h3><p>${data.desc}</p>`);
-  }
-
+  if (data.armor_desc) parts.push(`<p><strong>Armor:</strong> ${data.armor_desc}</p>`);
+  if (data.legendary_desc) parts.push(`<h3>Legendary Actions</h3><p>${data.legendary_desc}</p>`);
+  if (data.lair_desc) parts.push(`<h3>Lair Actions</h3><p>${data.lair_desc}</p>`);
+  if (data.desc) parts.push(`<h3>Description</h3><p>${data.desc}</p>`);
   return parts.join("\n");
 }
 
@@ -496,27 +651,18 @@ function parseLanguages(langStr) {
     "orc", "abyssal", "celestial", "draconic", "deep speech", "infernal",
     "primordial", "sylvan", "undercommon", "auran", "aquan", "ignan", "terran",
   ];
-  const result = [];
   const lower = langStr.toLowerCase();
-  for (const lang of known) {
-    if (lower.includes(lang)) result.push(lang);
-  }
-  return result;
+  return known.filter(l => lower.includes(l));
 }
 
 function parseDamageTypes(str) {
   if (!str) return [];
   const types = [
     "acid", "bludgeoning", "cold", "fire", "force", "lightning",
-    "necrotic", "piercing", "poison", "psychic", "radiant",
-    "slashing", "thunder",
+    "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder",
   ];
-  const result = [];
   const lower = str.toLowerCase();
-  for (const t of types) {
-    if (lower.includes(t)) result.push(t);
-  }
-  return result;
+  return types.filter(t => lower.includes(t));
 }
 
 function parseConditions(str) {
@@ -526,17 +672,12 @@ function parseConditions(str) {
     "grappled", "incapacitated", "invisible", "paralyzed", "petrified",
     "poisoned", "prone", "restrained", "stunned", "unconscious",
   ];
-  const result = [];
   const lower = str.toLowerCase();
-  for (const c of conditions) {
-    if (lower.includes(c)) result.push(c);
-  }
-  return result;
+  return conditions.filter(c => lower.includes(c));
 }
 
-/**
- * Generate a preview HTML stat block.
- */
+// ─── Preview (unchanged from original) ───────────────────────────────────────
+
 export function previewMonster(data) {
   const hp = data.hit_points ?? "?";
   const hd = data.hit_dice ?? "";
@@ -550,7 +691,6 @@ export function previewMonster(data) {
   html += `<p><strong>Armor Class</strong> ${ac}${acDesc}</p>`;
   html += `<p><strong>Hit Points</strong> ${hp}${hd ? ` (${hd})` : ""}</p>`;
 
-  // Speed
   let speedStr = "";
   if (data.speed) {
     if (typeof data.speed === "object") {
@@ -564,26 +704,19 @@ export function previewMonster(data) {
     }
   }
   html += `<p><strong>Speed</strong> ${speedStr}</p>`;
-
   html += `<div class="ci-stat-divider"></div>`;
 
-  // Abilities
   html += `<table class="ci-stat-abilities"><thead><tr>`;
-  for (const ab of ["STR", "DEX", "CON", "INT", "WIS", "CHA"]) {
-    html += `<th>${ab}</th>`;
-  }
+  for (const ab of ["STR", "DEX", "CON", "INT", "WIS", "CHA"]) html += `<th>${ab}</th>`;
   html += `</tr></thead><tbody><tr>`;
   for (const ab of ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]) {
     const val = data[ab] ?? 10;
     const mod = Math.floor((val - 10) / 2);
-    const sign = mod >= 0 ? "+" : "";
-    html += `<td>${val} (${sign}${mod})</td>`;
+    html += `<td>${val} (${mod >= 0 ? "+" : ""}${mod})</td>`;
   }
   html += `</tr></tbody></table>`;
-
   html += `<div class="ci-stat-divider"></div>`;
 
-  // Saves, skills, senses, languages, CR
   if (data.strength_save != null || data.dexterity_save != null) {
     const saves = [];
     for (const [field, label] of [["strength_save","Str"],["dexterity_save","Dex"],["constitution_save","Con"],["intelligence_save","Int"],["wisdom_save","Wis"],["charisma_save","Cha"]]) {
@@ -591,12 +724,9 @@ export function previewMonster(data) {
     }
     if (saves.length) html += `<p><strong>Saving Throws</strong> ${saves.join(", ")}</p>`;
   }
-
   if (data.skills && Object.keys(data.skills).length) {
-    const skills = Object.entries(data.skills).map(([k, v]) => `${k} +${v}`).join(", ");
-    html += `<p><strong>Skills</strong> ${skills}</p>`;
+    html += `<p><strong>Skills</strong> ${Object.entries(data.skills).map(([k, v]) => `${k} +${v}`).join(", ")}</p>`;
   }
-
   if (data.damage_resistances) html += `<p><strong>Damage Resistances</strong> ${data.damage_resistances}</p>`;
   if (data.damage_immunities) html += `<p><strong>Damage Immunities</strong> ${data.damage_immunities}</p>`;
   if (data.damage_vulnerabilities) html += `<p><strong>Damage Vulnerabilities</strong> ${data.damage_vulnerabilities}</p>`;
@@ -604,41 +734,24 @@ export function previewMonster(data) {
   if (data.senses) html += `<p><strong>Senses</strong> ${data.senses}</p>`;
   if (data.languages) html += `<p><strong>Languages</strong> ${data.languages}</p>`;
   html += `<p><strong>Challenge</strong> ${data.challenge_rating ?? "?"} (${xpByCR(parseCR(data.challenge_rating))} XP)</p>`;
-
   html += `<div class="ci-stat-divider"></div>`;
 
-  // Special abilities
   if (data.special_abilities?.length) {
-    for (const ab of data.special_abilities) {
-      html += `<p><strong><em>${ab.name}.</em></strong> ${ab.desc}</p>`;
-    }
+    for (const ab of data.special_abilities) html += `<p><strong><em>${ab.name}.</em></strong> ${ab.desc}</p>`;
   }
-
-  // Actions
   if (data.actions?.length) {
     html += `<h3>Actions</h3>`;
-    for (const act of data.actions) {
-      html += `<p><strong><em>${act.name}.</em></strong> ${act.desc}</p>`;
-    }
+    for (const act of data.actions) html += `<p><strong><em>${act.name}.</em></strong> ${act.desc}</p>`;
   }
-
-  // Reactions
   if (data.reactions?.length) {
     html += `<h3>Reactions</h3>`;
-    for (const r of data.reactions) {
-      html += `<p><strong><em>${r.name}.</em></strong> ${r.desc}</p>`;
-    }
+    for (const r of data.reactions) html += `<p><strong><em>${r.name}.</em></strong> ${r.desc}</p>`;
   }
-
-  // Legendary actions
   if (data.legendary_actions?.length) {
     html += `<h3>Legendary Actions</h3>`;
     if (data.legendary_desc) html += `<p>${data.legendary_desc}</p>`;
-    for (const la of data.legendary_actions) {
-      html += `<p><strong><em>${la.name}.</em></strong> ${la.desc}</p>`;
-    }
+    for (const la of data.legendary_actions) html += `<p><strong><em>${la.name}.</em></strong> ${la.desc}</p>`;
   }
-
   html += `</div>`;
   return html;
 }
