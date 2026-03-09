@@ -46,7 +46,7 @@ export class WikidotScraper extends BaseScraper {
 
   async fetchDetails(result) {
     const url = result.url || `${WIKIDOT_BASE}/${result.slug}`;
-    const response = await fetch(url, { mode: "cors" });
+    const response = await this.proxyFetch(url);
     if (!response.ok) throw new Error(`Wikidot returned ${response.status}`);
     const html = await response.text();
     return this._parseFullPage(html, result.type, result.slug);

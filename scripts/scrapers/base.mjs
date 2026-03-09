@@ -36,6 +36,22 @@ export class BaseScraper {
   isEnabled() {
     return true;
   }
+
+  /**
+   * Fetch a URL through the CORS proxy if configured, or directly.
+   * Scrapers that require a proxy should use this instead of raw fetch().
+   * @param {string} url - Target URL
+   * @param {object} [opts] - fetch options
+   * @returns {Promise<Response>}
+   */
+  async proxyFetch(url, opts = {}) {
+    const proxyUrl = game.settings.get("fvtt-compendium-importer", "corsProxyUrl");
+    if (proxyUrl && this.constructor.requiresProxy) {
+      const base = proxyUrl.replace(/\/+$/, "");
+      return fetch(`${base}/${url}`, opts);
+    }
+    return fetch(url, opts);
+  }
 }
 
 /**

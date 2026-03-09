@@ -31,7 +31,7 @@ export class DDBScraper extends BaseScraper {
     const fetches = endpoints.map(async (ep) => {
       try {
         const url = `${DDB_BASE}${ep.path}${slug}`;
-        const response = await fetch(url, { mode: "cors" });
+        const response = await this.proxyFetch(url);
         if (!response.ok) return;
 
         const html = await response.text();
@@ -49,7 +49,7 @@ export class DDBScraper extends BaseScraper {
 
   async fetchDetails(result) {
     const url = result.url || `${DDB_BASE}/monsters/${result.slug}`;
-    const response = await fetch(url, { mode: "cors" });
+    const response = await this.proxyFetch(url);
     if (!response.ok) throw new Error(`DDB returned ${response.status}`);
     const html = await response.text();
     return { html, type: result.type, slug: result.slug, source: "ddb" };

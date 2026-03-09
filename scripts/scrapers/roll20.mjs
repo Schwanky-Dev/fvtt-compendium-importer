@@ -25,7 +25,7 @@ export class Roll20Scraper extends BaseScraper {
     const fetches = categories.map(async (cat) => {
       try {
         const url = `${ROLL20_BASE}/${encodeURIComponent(query)}#content`;
-        const response = await fetch(url, { mode: "cors" });
+        const response = await this.proxyFetch(url);
         if (!response.ok) return;
 
         const html = await response.text();
@@ -42,7 +42,7 @@ export class Roll20Scraper extends BaseScraper {
 
   async fetchDetails(result) {
     const url = result.url || `${ROLL20_BASE}/${encodeURIComponent(result.name)}`;
-    const response = await fetch(url, { mode: "cors" });
+    const response = await this.proxyFetch(url);
     if (!response.ok) throw new Error(`Roll20 returned ${response.status}`);
     const html = await response.text();
     return { html, type: result.type, slug: result.slug, source: "roll20" };

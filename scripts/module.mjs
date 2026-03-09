@@ -68,6 +68,15 @@ Hooks.once("init", () => {
     },
   });
 
+  game.settings.register(MODULE_ID, "corsProxyUrl", {
+    name: "CORS Proxy URL",
+    hint: "URL of a CORS proxy for DDB/Roll20/Wikidot scraping. Leave blank to disable. Example: http://localhost:8081",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "",
+  });
+
   game.settings.register(MODULE_ID, "autoCreateMacros", {
     name: "COMPIMPORTER.Settings.AutoCreateMacros",
     hint: "COMPIMPORTER.Settings.AutoCreateMacrosHint",
