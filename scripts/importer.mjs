@@ -5,8 +5,21 @@
 import { mapMonster, parseSpellcasting, previewMonster } from "./mappers/monster.mjs";
 import { mapSpell, previewSpell } from "./mappers/spell.mjs";
 import { mapItem, previewItem } from "./mappers/item.mjs";
+import { normalizeRoll20 } from "./mappers/roll20-normalize.mjs";
 
 const MODULE_ID = "fvtt-compendium-importer";
+
+/**
+ * If the result came from Roll20, normalize its _raw data to Open5e format.
+ * Mutates result._raw in place and returns the normalized data.
+ */
+function ensureNormalized(result) {
+  if (result.source === "roll20" && result._raw && !result._raw._roll20Normalized) {
+    result._raw = normalizeRoll20(result._raw, result.type);
+    result._raw._roll20Normalized = true;
+  }
+  return result._raw;
+}
 
 /**
  * Get the appropriate mapper based on result type.
@@ -36,6 +49,7 @@ function getMapper(result) {
  * Generate preview HTML for a search result.
  */
 export function generatePreview(result) {
+  ensureNormalized(result);
   const data = result._raw;
   if (!data) return `<p>No data available for preview.</p>`;
 
@@ -63,6 +77,10 @@ export async function importResult(result, importType, scraper) {
   }
 
   if (!data) throw new Error("No data available for import");
+
+  // Normalize Roll20 data before passing to mappers
+  ensureNormalized(result);
+  data = result._raw;
 
   switch (importType) {
     case "actor":
