@@ -295,69 +295,18 @@ function parseAoETarget(desc) {
 }
 
 /**
- * Generate a random 16-char hex ID for Activities.
- * In-browser, foundry.utils.randomID(16) is available, but we provide a fallback.
- */
-function generateActivityId() {
-  if (typeof foundry !== "undefined" && foundry.utils?.randomID) {
-    return foundry.utils.randomID(16);
-  }
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let id = "";
-  for (let i = 0; i < 16; i++) id += chars[Math.floor(Math.random() * chars.length)];
-  return id;
-}
-
-/**
- * Parse damage into the new Activities damage format.
- * Returns array of { number, denomination, bonus, types } objects.
- */
-function parseDamageForActivity(desc) {
-  if (!desc) return [];
-  const parts = [];
-
-  // Primary: "Hit: 6 (1d8 + 2) slashing damage"
-  const primary = desc.match(/Hit:\s*\d+\s*\((\d+)d(\d+)(?:\s*([+\-]\s*\d+))?\)\s*(\w+)\s*damage/i);
-  if (primary) {
-    parts.push({
-      number: parseInt(primary[1]),
-      denomination: parseInt(primary[2]),
-      bonus: primary[3] ? primary[3].replace(/\s+/g, "") : "",
-      types: [primary[4].toLowerCase()],
-    });
-  }
-
-  // Additional: "plus 3 (1d6) fire damage"
-  const addlRe = /plus\s+\d+\s*\((\d+)d(\d+)(?:\s*([+\-]\s*\d+))?\)\s*(\w+)\s*damage/gi;
-  let addl;
-  while ((addl = addlRe.exec(desc)) !== null) {
-    parts.push({
-      number: parseInt(addl[1]),
-      denomination: parseInt(addl[2]),
-      bonus: addl[3] ? addl[3].replace(/\s+/g, "") : "",
-      types: [addl[4].toLowerCase()],
-    });
-  }
-
-  // Save-based damage
-  if (parts.length === 0) {
-    const saveDmg = desc.match(/(?:takes?|taking|deals?)\s+\d+\s*\((\d+)d(\d+)(?:\s*([+\-]\s*\d+))?\)\s*(\w+)\s*damage/i);
-    if (saveDmg) {
-      parts.push({
-        number: parseInt(saveDmg[1]),
-        denomination: parseInt(saveDmg[2]),
-        bonus: saveDmg[3] ? saveDmg[3].replace(/\s+/g, "") : "",
-        types: [saveDmg[4].toLowerCase()],
-      });
-    }
-  }
-
-  return parts;
-}
-
-/**
  * Build a fully-populated action item for a monster.
- * Produces BOTH legacy fields (dnd5e v2) AND Activities (dnd5e v3+).
+ *
+ * STRATEGY: Set ONLY legacy fields (actionType, damage.parts, attack, etc.)
+ * and let dnd5e v3+'s built-in auto-migration (ActivitiesTemplate.initializeActivities)
+ * create the Activities. This ensures the activity schema always matches what the
+ * system expects, regardless of dnd5e version.
+ *
+ * The migration fires when:
+ *   - source has _id, type, system, effects
+ *   - source has actionType or activation.type
+ *   - _stats.systemVersion is older than "4.0.1" (or missing = "0.0.0")
+ *   - activities is empty
  */
 function buildActionItem(action, type = "natural") {
   const desc = action.desc || "";
@@ -369,6 +318,7 @@ function buildActionItem(action, type = "natural") {
     name: action.name,
     type: isWeaponAttack ? "weapon" : "feat",
     img: pickActionIcon(action),
+    effects: [], // Required for dnd5e auto-migration to fire
     system: {
       description: { value: desc },
       source: { custom: "Compendomize" },
@@ -389,6 +339,7 @@ function buildActionItem(action, type = "natural") {
   // For weapon-type items, set weapon type to "natural" for NPC attacks
   if (item.type === "weapon") {
     item.system.type = { value: "natural", baseItem: "" };
+    item.system.proficient = 1;
   }
 
   // Legendary action cost
@@ -397,40 +348,37 @@ function buildActionItem(action, type = "natural") {
     if (costMatch) item.system.activation.cost = parseInt(costMatch[1]);
   }
 
-  // === Legacy fields (dnd5e v2 compat) ===
+  // Action type — triggers auto-migration into Activities
   if (actionType) {
     item.system.actionType = actionType;
   }
 
+  // Attack bonus
   if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
     const bonus = parseAttackBonus(desc);
     if (bonus) {
       item.system.attack = { bonus, flat: true };
-      item.system.ability = "";
+      item.system.ability = ""; // flat bonus, don't derive from ability
     }
   }
 
+  // Damage (legacy parts format — dnd5e migration converts to base + activity damage)
   const { parts, versatile } = parseDamage(desc);
   if (parts.length > 0) {
     item.system.damage = { parts };
     if (versatile) item.system.damage.versatile = versatile;
-
-    // dnd5e v3+: weapon items need damage.base for the primary damage
-    if (item.type === "weapon") {
-      const primaryDmg = parseDamageForActivity(desc)[0];
-      if (primaryDmg) {
-        item.system.damage.base = primaryDmg;
-      }
-    }
   }
 
+  // Range
   const range = parseRange(desc);
   if (range) item.system.range = range;
 
+  // Target
   if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
     item.system.target = { value: 1, type: "creature" };
   }
 
+  // Save DC
   if (isSave) {
     const save = parseSaveDC(desc);
     if (save) item.system.save = save;
@@ -438,84 +386,8 @@ function buildActionItem(action, type = "natural") {
     if (aoe) item.system.target = aoe;
   }
 
-  // === Activities (dnd5e v3+) ===
-  if (actionType) {
-    const activityId = generateActivityId();
-    const activationType = type === "legendary" ? "legendary" : type === "lair" ? "lair" : "action";
-    let activationCost = 1;
-    if (type === "legendary") {
-      const costMatch = desc.match(/costs?\s+(\d+)\s+actions?/i);
-      if (costMatch) activationCost = parseInt(costMatch[1]);
-    }
-
-    const isAttack = isWeaponAttack || actionType === "msak" || actionType === "rsak";
-    const activityType = isAttack ? "attack" : isSave ? "save" : "utility";
-
-    const activity = {
-      _id: activityId,
-      type: activityType,
-      activation: { type: activationType, value: activationCost, override: false },
-      description: { chatFlavor: "" },
-      duration: { units: "inst", concentration: false, override: false },
-      range: { override: false },
-      target: { override: false, prompt: true },
-      damage: { includeBase: true, parts: [] },
-      consumption: { scaling: { allowed: false }, targets: [] },
-      uses: { spent: 0, max: "" },
-    };
-
-    // Attack configuration — must include type.value and type.classification
-    if (isAttack) {
-      const bonus = parseAttackBonus(desc);
-      const isMelee = actionType === "mwak" || actionType === "msak";
-      const isSpellAtk = actionType === "msak" || actionType === "rsak";
-      activity.attack = {
-        ability: "",
-        bonus: bonus || "",
-        flat: !!bonus,
-        type: {
-          value: isMelee ? "melee" : "ranged",
-          classification: isSpellAtk ? "spell" : "weapon",
-        },
-        critical: { threshold: null },
-      };
-    }
-
-    // Save configuration
-    if (isSave) {
-      const save = parseSaveDC(desc);
-      if (save) {
-        activity.save = {
-          ability: save.ability,
-          dc: { calculation: "flat", formula: String(save.dc) },
-        };
-      }
-    }
-
-    // Damage parts (new format: { number, denomination, bonus, types })
-    const activityDamage = parseDamageForActivity(desc);
-    if (activityDamage.length > 0) {
-      activity.damage = { includeBase: true, parts: activityDamage };
-    }
-
-    // Range
-    if (range) {
-      activity.range = { value: range.value, units: range.units || "ft", override: false };
-      if (range.long) activity.range.long = range.long;
-    }
-
-    // Target
-    if (isAttack) {
-      activity.target = { affects: { count: "1", type: "creature" }, override: false, prompt: true };
-    } else if (isSave) {
-      const aoe = parseAoETarget(desc);
-      if (aoe) {
-        activity.target = { template: { value: aoe.value, type: aoe.type, units: aoe.units || "ft" }, override: false, prompt: true };
-      }
-    }
-
-    item.system.activities = { [activityId]: activity };
-  }
+  // DO NOT set system.activities — let dnd5e auto-migration create them
+  // from the legacy fields above. This ensures correct schema for any dnd5e version.
 
   return item;
 }

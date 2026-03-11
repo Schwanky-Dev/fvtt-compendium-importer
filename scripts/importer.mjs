@@ -160,14 +160,6 @@ async function resolveSpellItem(spellName, mode, uses) {
         if (entry) {
           const doc = await pack.getDocument(entry._id);
           const itemData = doc.toObject();
-
-          // Strip legacy action fields if spell already has Activities (prevents dnd5e v3 double-migration)
-          if (itemData.system?.activities && Object.keys(itemData.system.activities).length > 0) {
-            delete itemData.system.actionType;
-            // Keep damage for reference but don't let it trigger migration
-            if (itemData.system.damage?.parts) delete itemData.system.damage.parts;
-          }
-
           applySpellPreparation(itemData, mode, uses);
           return itemData;
         }
