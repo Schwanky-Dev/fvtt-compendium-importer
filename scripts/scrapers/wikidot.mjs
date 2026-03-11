@@ -3,8 +3,9 @@ import { BaseScraper } from "./base.mjs";
 const WIKIDOT_BASE = "https://dnd5e.wikidot.com";
 
 /**
- * dnd5e.wikidot.com scraper. Major SRD wiki with monsters, spells, and items.
- * Like DDB/Roll20, requires a CORS proxy for browser-side fetches.
+ * dnd5e.wikidot.com scraper. SRD reference for spells and classes only.
+ * The site does NOT have monster, weapon, or armor pages.
+ * Requires a CORS proxy for browser-side fetches.
  */
 export class WikidotScraper extends BaseScraper {
   static id = "wikidot";
@@ -53,17 +54,12 @@ export class WikidotScraper extends BaseScraper {
   }
 
   _getEndpoints(category, slug) {
-    const all = [
-      { url: `${WIKIDOT_BASE}/monster:${slug}`, type: "monster" },
-      { url: `${WIKIDOT_BASE}/spell:${slug}`, type: "spell" },
-      { url: `${WIKIDOT_BASE}/wondrous-items:${slug}`, type: "magicitem" },
-      { url: `${WIKIDOT_BASE}/weapon:${slug}`, type: "weapon" },
-      { url: `${WIKIDOT_BASE}/armor:${slug}`, type: "armor" },
-    ];
-    if (category === "monsters") return [all[0]];
-    if (category === "spells") return [all[1]];
-    if (category === "items") return all.slice(2);
-    return all;
+    // Wikidot only reliably has spell pages (spell:name format).
+    // No monster, weapon, armor, or wondrous item pages exist on this site.
+    const spellEndpoint = { url: `${WIKIDOT_BASE}/spell:${slug}`, type: "spell" };
+
+    if (category === "monsters" || category === "items") return [];
+    return [spellEndpoint];
   }
 
   /**

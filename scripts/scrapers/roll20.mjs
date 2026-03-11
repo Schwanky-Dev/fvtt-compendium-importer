@@ -15,16 +15,24 @@ export class Roll20Scraper extends BaseScraper {
     return game.settings.get("fvtt-compendium-importer", "enableRoll20");
   }
 
+  /**
+   * Capitalize each word for Roll20's case-sensitive URLs.
+   * e.g. "giant boar" → "Giant Boar"
+   */
+  _titleCase(str) {
+    return str.replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+  }
+
   async search(query, category) {
     if (!this.isEnabled()) return [];
 
-    const slug = query.replace(/\s+/g, "%20");
+    const titleQuery = this._titleCase(query);
     const categories = this._getCategories(category);
     const results = [];
 
     const fetches = categories.map(async (cat) => {
       try {
-        const url = `${ROLL20_BASE}/${encodeURIComponent(query)}#content`;
+        const url = `${ROLL20_BASE}/${encodeURIComponent(titleQuery)}#content`;
         const response = await this.proxyFetch(url);
         if (!response.ok) return;
 
