@@ -8,6 +8,22 @@
         <i class="fas fa-search"></i>
       </button>
     </div>
+    <div class="ci-search-options">
+      <div class="ci-pass-group">
+        <button type="button" class="ci-pass-btn {{#if (eq searchPass 'quick')}}active{{/if}}" data-pass="quick" title="Primary source only">Quick</button>
+        <button type="button" class="ci-pass-btn {{#if (eq searchPass 'standard')}}active{{/if}}" data-pass="standard" title="Open5e + AideDD + Roll20">Standard</button>
+        <button type="button" class="ci-pass-btn {{#if (eq searchPass 'deep')}}active{{/if}}" data-pass="deep" title="All enabled sources">Deep</button>
+      </div>
+      <label class="ci-exact-toggle">
+        <input type="checkbox" name="exactMatch" {{#if exactMatch}}checked{{/if}} />
+        Exact match
+      </label>
+    </div>
+    {{#if hasResults}}
+    <div class="ci-filter-bar">
+      <input type="text" name="resultFilter" value="{{filterText}}" placeholder="Filter results..." />
+    </div>
+    {{/if}}
   </div>
 
   <!-- Results -->

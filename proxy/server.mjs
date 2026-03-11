@@ -16,6 +16,7 @@ const ALLOWED_DOMAINS = new Set([
   "www.dndbeyond.com",
   "open5e.com",
   "roll20.net",
+  "www.aidedd.org",
 ]);
 
 function corsHeaders() {

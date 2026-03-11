@@ -30,13 +30,36 @@ export class Roll20Scraper extends BaseScraper {
     const titleQuery = this._titleCase(query);
     const results = [];
 
-    try {
-      // Roll20 has a JSON API: /compendium/dnd5e/Name.json
-      const url = `${ROLL20_BASE}/${encodeURIComponent(titleQuery)}.json`;
-      const response = await this.proxyFetch(url);
-      if (!response.ok) return [];
+    // Try variations for fuzzy matching
+    const variations = [titleQuery];
+    // Add the raw query if different from title-cased
+    if (query !== titleQuery) variations.push(query);
+    // Add with "The" prefix
+    if (!titleQuery.startsWith("The ")) variations.push(`The ${titleQuery}`);
 
-      const json = await response.json();
+    let response, foundUrl;
+    for (const variant of variations) {
+      try {
+        const url = `${ROLL20_BASE}/${encodeURIComponent(variant)}.json`;
+        const resp = await this.proxyFetch(url);
+        if (resp.ok) {
+          response = resp;
+          foundUrl = url;
+          break;
+        }
+      } catch { /* try next */ }
+    }
+
+    try {
+      if (!response?.ok) return [];
+
+      let json;
+      try {
+        json = await response.json();
+      } catch {
+        // Invalid JSON (e.g. 404 page, truncated response)
+        return [];
+      }
       if (!json.name) return [];
 
       const cat = (json.data?.Category || "").toLowerCase();
@@ -73,7 +96,12 @@ export class Roll20Scraper extends BaseScraper {
     const url = `${ROLL20_BASE}/${encodeURIComponent(result.name)}.json`;
     const response = await this.proxyFetch(url);
     if (!response.ok) throw new Error(`Roll20 returned ${response.status}`);
-    const json = await response.json();
+    let json;
+    try {
+      json = await response.json();
+    } catch {
+      throw new Error("Roll20 returned invalid JSON");
+    }
     return { json, type: result.type, slug: result.slug, source: "roll20" };
   }
 }

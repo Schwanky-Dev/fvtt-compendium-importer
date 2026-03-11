@@ -585,12 +585,17 @@ export function mapMonster(data) {
   // Parse spellcasting
   const spellcasting = parseSpellcasting(data.special_abilities);
 
+  // Resolve portrait/token image from source data
+  const portraitImg = data.img_main || data.img || data.token || data.image || null;
+  const actorImg = portraitImg || DEFAULT_ICON;
+  const tokenImg = portraitImg || DEFAULT_ICON;
+
   // Build base actor data
   const actorData = {
     name: data.name,
     type: "npc",
-    img: DEFAULT_ICON,
-    prototypeToken: { texture: { src: DEFAULT_ICON } },
+    img: actorImg,
+    prototypeToken: { texture: { src: tokenImg } },
     system: {
       abilities,
       attributes: {

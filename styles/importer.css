@@ -55,6 +55,75 @@
   background: #9B3DAB;
 }
 
+/* Search Options */
+.ci-search-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.ci-pass-group {
+  display: flex;
+  gap: 2px;
+}
+
+.ci-pass-btn {
+  padding: 3px 10px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #999;
+  border: 1px solid #555;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ci-pass-btn:hover {
+  background: rgba(123, 45, 139, 0.2);
+  color: #d4a0e0;
+}
+
+.ci-pass-btn.active {
+  background: #7B2D8B;
+  color: white;
+  border-color: #7B2D8B;
+}
+
+.ci-exact-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #999;
+  cursor: pointer;
+}
+
+.ci-exact-toggle input[type="checkbox"] {
+  margin: 0;
+}
+
+/* Filter Bar */
+.ci-filter-bar {
+  margin-top: 6px;
+}
+
+.ci-filter-bar input[type="text"] {
+  width: 100%;
+  padding: 5px 10px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #ccc;
+  font-size: 12px;
+}
+
+.ci-filter-bar input[type="text"]:focus {
+  border-color: #7B2D8B;
+  outline: none;
+}
+
 /* Results */
 .ci-results {
   flex: 1;

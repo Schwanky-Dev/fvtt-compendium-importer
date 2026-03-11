@@ -154,6 +154,8 @@ export function normalizeRoll20Monster(raw) {
     reactions: parseDataArray(d["data-Reactions"]),
     legendary_actions: parseDataArray(d["data-Legendary-Actions"]),
     special_abilities: parseDataArray(d["data-Traits"]),
+    // Token art
+    img_main: d.Token || d.avatar || null,
     // Preserve source info
     document__license_url: "",
     document__title: d.Source || "Roll20",

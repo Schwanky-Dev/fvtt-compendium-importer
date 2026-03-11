@@ -46,6 +46,15 @@ Hooks.once("init", () => {
     default: true,
   });
 
+  game.settings.register(MODULE_ID, "enableAidedd", {
+    name: "COMPIMPORTER.Settings.EnableAidedd",
+    hint: "COMPIMPORTER.Settings.EnableAideddHint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
   game.settings.register(MODULE_ID, "enableRoll20", {
     name: "COMPIMPORTER.Settings.EnableRoll20",
     hint: "COMPIMPORTER.Settings.EnableRoll20Hint",
@@ -66,6 +75,36 @@ Hooks.once("init", () => {
       all: "All Sources",
       official: "Official WotC Only (green)",
       "official+ua": "Official + Unearthed Arcana (green + yellow)",
+    },
+  });
+
+  game.settings.register(MODULE_ID, "defaultSearchPass", {
+    name: "COMPIMPORTER.Settings.DefaultSearchPass",
+    hint: "COMPIMPORTER.Settings.DefaultSearchPassHint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "standard",
+    choices: {
+      quick: "Quick (primary source only)",
+      standard: "Standard (Open5e + AideDD + Roll20)",
+      deep: "Deep (all enabled sources)",
+    },
+  });
+
+  game.settings.register(MODULE_ID, "primarySource", {
+    name: "COMPIMPORTER.Settings.PrimarySource",
+    hint: "COMPIMPORTER.Settings.PrimarySourceHint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "open5e",
+    choices: {
+      open5e: "Open5e",
+      aidedd: "AideDD",
+      roll20: "Roll20",
+      ddb: "D&D Beyond",
+      wikidot: "Wikidot",
     },
   });
 
