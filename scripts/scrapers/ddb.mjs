@@ -48,6 +48,12 @@ export class DDBScraper extends BaseScraper {
           if (!name || seen.has(path)) continue;
           seen.add(path);
           const slug = path.split("/").pop() || name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          // Parse ID from path to detect edition (5194xxx+ = 2024, 16xxx = 2014)
+          const idMatch = path.match(/\/(\d+)-/);
+          const numId = idMatch ? parseInt(idMatch[1]) : 0;
+          const is2024 = numId >= 5000000;
+          const editionLabel = is2024 ? "2024 Rules" : "D&D Beyond (2014)";
+
           results.push({
             name,
             slug,
@@ -56,6 +62,8 @@ export class DDBScraper extends BaseScraper {
             sourceLabel: DDBScraper.label,
             sourceColor: DDBScraper.color,
             url: `${DDB_BASE}${path}`,
+            documentTitle: editionLabel,
+            _ddb2024: is2024,
             _raw: { name },
           });
         }

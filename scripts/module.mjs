@@ -73,8 +73,9 @@ Hooks.once("init", () => {
     default: "all",
     choices: {
       all: "All Sources",
-      official: "Official WotC Only (green)",
-      "official+ua": "Official + Unearthed Arcana (green + yellow)",
+      official: "Official WotC 2014 Only (green)",
+      "official+2024": "Official 2014 + 2024 (green + blue)",
+      "official+ua": "All WotC (green + blue + yellow)",
     },
   });
 

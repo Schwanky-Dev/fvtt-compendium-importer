@@ -9,6 +9,7 @@ import { Roll20Scraper } from "../scrapers/roll20.mjs";
 import { WikidotScraper } from "../scrapers/wikidot.mjs";
 import { AideDDScraper } from "../scrapers/aidedd.mjs";
 import { importResult, generatePreview } from "../importer.mjs";
+import { assignTier } from "../source-tiers.mjs";
 
 const MODULE_ID = "fvtt-compendium-importer";
 
@@ -133,7 +134,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         typeBadge: this.#typeBadge(r),
         metaInfo: this.#metaInfo(r),
         bookBadge: r.documentTitle || "",
-        sourceBadgeColor: r.sourceBadgeColor || this.#getSourceBadgeColor(r),
+        sourceBadgeColor: r.sourceBadgeColor || "#F44336",
       })),
       loading: this.#loading,
       searchQuery: this.#searchQuery,
@@ -144,29 +145,6 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
       exactMatch: this.#exactMatch,
       filterText: this.#filterText,
     };
-  }
-
-  /**
-   * Source-aware badge color. Overrides the per-result sourceBadgeColor
-   * for sources that are always official/third-party.
-   */
-  #getSourceBadgeColor(result) {
-    // Source-level overrides
-    switch (result.source) {
-      case "roll20": return "#4CAF50";   // GREEN — official SRD
-      case "ddb": return "#4CAF50";      // GREEN — official
-      case "aidedd": return "#4CAF50";   // GREEN — official SRD
-      case "wikidot": return "#FFC107";  // YELLOW — SRD reference
-      case "open5e": {
-        // Open5e: green for WotC SRD, red for third-party
-        const slug = result.documentSlug || "";
-        if (slug === "wotc-srd" || (result.documentTitle || "").includes("5e Core Rules")) {
-          return "#4CAF50";
-        }
-        return "#F44336";
-      }
-      default: return "#F44336";
-    }
   }
 
   #typeBadge(result) {
@@ -248,26 +226,19 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
       });
 
-      // Assign source tiers for sources that don't set them
+      // Assign content-aware source tiers
       for (const r of this.#results) {
-        if (!r.sourceTier) {
-          switch (r.source) {
-            case "roll20": r.sourceTier = "official"; break;
-            case "ddb": r.sourceTier = "official"; break;
-            case "aidedd": r.sourceTier = "official"; break;
-            case "wikidot": r.sourceTier = "ua"; break;
-            default: r.sourceTier = "thirdparty"; break;
-          }
-        }
-        r.sourceBadgeColor = this.#getSourceBadgeColor(r);
+        assignTier(r);
       }
 
       // Apply source filter
       const sourceFilter = game.settings.get(MODULE_ID, "sourceFilter");
       if (sourceFilter === "official") {
         this.#results = this.#results.filter((r) => r.sourceTier === "official");
+      } else if (sourceFilter === "official+2024") {
+        this.#results = this.#results.filter((r) => r.sourceTier === "official" || r.sourceTier === "2024");
       } else if (sourceFilter === "official+ua") {
-        this.#results = this.#results.filter((r) => r.sourceTier === "official" || r.sourceTier === "ua");
+        this.#results = this.#results.filter((r) => r.sourceTier === "official" || r.sourceTier === "2024" || r.sourceTier === "ua");
       }
     } catch (err) {
       console.error(`${MODULE_ID} | Search failed:`, err);

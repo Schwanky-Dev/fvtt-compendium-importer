@@ -14,6 +14,8 @@
       "EnableWikidotHint": "Scrape dnd5e.wikidot.com pages (requires proxy for CORS).",
       "EnableDDB": "Enable D&D Beyond",
       "EnableDDBHint": "Scrape D&D Beyond pages (requires proxy for CORS).",
+      "SourceFilter": "Content Filter",
+      "SourceFilterHint": "Filter results by edition/tier. Green = 2014 official, Blue = 2024 revised, Yellow = UA/playtest, Red = third-party.",
       "EnableAidedd": "Enable AideDD",
       "EnableAideddHint": "Scrape aidedd.org for SRD monsters and spells (requires proxy for CORS).",
       "EnableRoll20": "Enable Roll20",

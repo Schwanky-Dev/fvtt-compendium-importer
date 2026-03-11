@@ -70,6 +70,9 @@ export class Roll20Scraper extends BaseScraper {
 
       const type = cat === "monsters" ? "monster" : cat === "spells" ? "spell" : "magicitem";
 
+      // Extract source book from Roll20 data
+      const sourceBook = json.data?.Source || json.data?.Expansion || "5th Edition SRD";
+
       results.push({
         name: json.name,
         slug: json.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -78,6 +81,7 @@ export class Roll20Scraper extends BaseScraper {
         sourceLabel: Roll20Scraper.label,
         sourceColor: Roll20Scraper.color,
         url: `${ROLL20_BASE}/${encodeURIComponent(json.name)}`,
+        documentTitle: sourceBook,
         _raw: json,
       });
     } catch (err) {
