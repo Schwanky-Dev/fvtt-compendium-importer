@@ -9,16 +9,24 @@ const MACRO = {
   name: "Quick Import",
   icon: "icons/tools/scribal/magnifying-glass.webp",
   command: `
-const query = await Dialog.prompt({
+new Dialog({
   title: "Quick Import",
-  content: '<input type="text" name="query" placeholder="Search for monsters, spells, items..." autofocus>',
-  callback: (html) => html.querySelector ? html.querySelector('input[name="query"]')?.value : html[0]?.querySelector('input[name="query"]')?.value,
-  rejectClose: false,
-});
-if (query) {
-  const { ImporterApp } = await import("/modules/fvtt-compendium-importer/scripts/apps/ImporterApp.mjs");
-  ImporterApp.openWithSearch(query);
-}
+  content: '<div style="margin:10px 0"><input type="text" id="ci-query" placeholder="Search for monsters, spells, items..." style="width:100%" autofocus></div>',
+  buttons: {
+    search: {
+      icon: '<i class="fas fa-search"></i>',
+      label: "Search",
+      callback: async (html) => {
+        const query = html.find ? html.find('#ci-query').val() : html.querySelector('#ci-query')?.value;
+        if (query) {
+          const { ImporterApp } = await import("/modules/fvtt-compendium-importer/scripts/apps/ImporterApp.mjs");
+          ImporterApp.openWithSearch(query);
+        }
+      }
+    }
+  },
+  default: "search"
+}).render(true);
 `.trim(),
 };
 
