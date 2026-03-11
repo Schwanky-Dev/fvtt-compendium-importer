@@ -100,8 +100,9 @@ function parseSaves(str) {
  * Accepts either the top-level roll20 response or just its `.data` sub-object.
  */
 export function normalizeRoll20Monster(raw) {
-  // Roll20 response may wrap data under .data
-  const d = raw?.data && typeof raw.data === "object" && raw.data.Category ? raw.data : raw;
+  // Roll20 response wraps stats under .data — detect by Category OR known stat fields
+  const hasDataObj = raw?.data && typeof raw.data === "object";
+  const d = hasDataObj && (raw.data.Category || raw.data.STR || raw.data.HP) ? raw.data : raw;
   const name = d.Name || raw?.name || "Unknown";
 
   const { ac, armor_desc } = parseAC(d.AC);
@@ -167,7 +168,8 @@ export function normalizeRoll20Monster(raw) {
  * Normalize a Roll20 spell `_raw` object into Open5e format.
  */
 export function normalizeRoll20Spell(raw) {
-  const d = raw?.data && typeof raw.data === "object" && raw.data.Category ? raw.data : raw;
+  const hasDataObj = raw?.data && typeof raw.data === "object";
+  const d = hasDataObj && (raw.data.Category || raw.data.Level || raw.data.School) ? raw.data : raw;
   const name = d.Name || raw?.name || "Unknown";
 
   // Parse components string "V S M" → { V, S, M }

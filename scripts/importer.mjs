@@ -49,6 +49,19 @@ function getMapper(result) {
  * Generate preview HTML for a search result.
  */
 export function generatePreview(result) {
+  // DDB results only have name + URL; no parseable stat data
+  if (result.source === "ddb") {
+    const url = result.url || "#";
+    return `<div class="ci-stat-block">` +
+      `<h2 class="ci-stat-name">${result.name}</h2>` +
+      `<div class="ci-stat-divider"></div>` +
+      `<p>Source: <strong>D&D Beyond</strong></p>` +
+      `<p>Stat data is not available from D&D Beyond (pages are dynamically rendered).</p>` +
+      `<p>Import will create a <strong>Journal Entry</strong> with a link to the D&D Beyond page.</p>` +
+      `<p><a href="${url}" target="_blank" rel="noopener">${url}</a></p>` +
+      `</div>`;
+  }
+
   ensureNormalized(result);
   const data = result._raw;
   if (!data) return `<p>No data available for preview.</p>`;
@@ -77,6 +90,11 @@ export async function importResult(result, importType, scraper) {
   }
 
   if (!data) throw new Error("No data available for import");
+
+  // DDB results have no parseable stats — always create a Journal Entry
+  if (result.source === "ddb") {
+    return importAsJournal(result, { name: result.name, _ddbUrl: result.url });
+  }
 
   // Normalize Roll20 data before passing to mappers
   ensureNormalized(result);
@@ -276,7 +294,13 @@ async function importAsItem(result, data) {
  * Import as Journal Entry.
  */
 async function importAsJournal(result, data) {
-  const previewHTML = generatePreview(result);
+  let previewHTML = generatePreview(result);
+  // For DDB results, include a direct link in the journal page
+  if (data._ddbUrl) {
+    previewHTML = `<h2>${data.name ?? result.name}</h2>` +
+      `<p>Imported from <strong>D&D Beyond</strong>.</p>` +
+      `<p><a href="${data._ddbUrl}" target="_blank" rel="noopener">View on D&D Beyond</a></p>`;
+  }
   const journalData = {
     name: data.name ?? result.name,
     pages: [{

@@ -484,11 +484,23 @@ export function parseSpellcasting(specialAbilities) {
  * Split a comma-separated spell list, stopping at newlines or next section headers.
  */
 function splitSpellList(str) {
-  // Cut at newline or next section header
-  const cut = str.split(/\n/)[0];
+  // Strip leading bullet markers ("* ") and cut at first newline
+  let cut = str.replace(/^[\s*•]+/, "").split(/[\n\r]/)[0];
   return cut.split(",")
-    .map(s => s.replace(/\*+/g, "").trim()) // remove asterisks (used for material component markers)
-    .filter(s => s.length > 0 && !s.match(/^\d/)); // filter out empty or stray numbers
+    .map(s => s
+      .replace(/\*+/g, "")           // remove asterisks (material component markers)
+      .replace(/\([^)]*\)/g, "")     // remove parenthetical notes like (ritual)
+      .trim()
+      .toLowerCase()
+    )
+    .filter(s =>
+      s.length > 0 &&
+      s.length <= 50 &&              // real spell names are short
+      !s.match(/^\d/) &&             // filter stray numbers
+      !s.includes("•") &&            // no bullet separators
+      !/\d+\s*(st|nd|rd|th)\s+level/i.test(s) && // no level headers
+      !/\bslots?\b/i.test(s)         // no slot references
+    );
 }
 
 // ─── Main Mapper ──────────────────────────────────────────────────────────────
