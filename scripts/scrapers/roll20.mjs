@@ -58,7 +58,7 @@ export class Roll20Scraper extends BaseScraper {
         _raw: json,
       });
     } catch (err) {
-      console.debug(`Compendium Importer | Roll20 fetch failed:`, err.message);
+      console.warn(`Compendium Importer | Roll20 fetch failed:`, err.message);
     }
 
     return results;

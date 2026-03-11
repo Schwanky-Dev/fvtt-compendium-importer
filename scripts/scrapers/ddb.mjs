@@ -60,7 +60,7 @@ export class DDBScraper extends BaseScraper {
           });
         }
       } catch (err) {
-        console.debug(`Compendium Importer | DDB search failed:`, err.message);
+        console.warn(`Compendium Importer | DDB search failed:`, err.message);
       }
     });
 

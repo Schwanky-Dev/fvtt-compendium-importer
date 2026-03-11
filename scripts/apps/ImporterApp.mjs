@@ -148,11 +148,11 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         return a.name.localeCompare(b.name);
       });
 
-      // Deduplicate by name+type (prefer open5e)
+      // Deduplicate by name+type+source (keep one per source)
       const seen = new Set();
       this.#results = this.#results.filter((r) => {
-        const key = `${r.name.toLowerCase()}::${r.type}`;
-        if (seen.has(key) && r.source !== "open5e") return false;
+        const key = `${r.name.toLowerCase()}::${r.type}::${r.source}`;
+        if (seen.has(key)) return false;
         seen.add(key);
         return true;
       });
