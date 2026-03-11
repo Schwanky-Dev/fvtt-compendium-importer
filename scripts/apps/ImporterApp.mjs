@@ -34,6 +34,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
       importResult: ImporterApp.#onImport,
       previewResult: ImporterApp.#onPreview,
       closePreview: ImporterApp.#onClosePreview,
+      configureTiers: ImporterApp.#onConfigureTiers,
     },
   };
 
@@ -54,13 +55,6 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
   #searchPass = "standard";
   #exactMatch = false;
   #filterText = "";
-
-  /** Search pass definitions: which scraper IDs are included in each pass */
-  static SEARCH_PASSES = {
-    quick: null, // uses primarySource setting
-    standard: new Set(["open5e", "aidedd", "roll20"]),
-    deep: null,  // all enabled
-  };
 
   constructor(options = {}) {
     super(options);
@@ -182,19 +176,20 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#previewIndex = -1;
     this.render();
 
+    // Read tier config from settings
+    let tierConfig;
+    try {
+      tierConfig = JSON.parse(game.settings.get(MODULE_ID, "tierConfig"));
+    } catch {
+      tierConfig = { quick: ["open5e"], standard: ["open5e", "aidedd", "roll20"], deep: ["open5e", "aidedd", "roll20", "ddb", "wikidot"] };
+    }
+
     const enabledScrapers = this.#scrapers.filter((s) => {
       if (!s.isEnabled()) return false;
       const pass = this.#searchPass;
-      if (pass === "deep") return true;
-      if (pass === "quick") {
-        // Only the primary source (default: open5e)
-        let primary;
-        try { primary = game.settings.get("fvtt-compendium-importer", "primarySource"); } catch { primary = "open5e"; }
-        return s.constructor.id === primary;
-      }
-      // standard
-      const stdSet = ImporterApp.SEARCH_PASSES.standard;
-      return stdSet.has(s.constructor.id);
+      const tierSources = tierConfig[pass];
+      if (!tierSources) return true; // unknown tier = all
+      return tierSources.includes(s.constructor.id);
     });
 
     try {
@@ -308,6 +303,49 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.#importing.delete(index);
       this.render();
     }
+  }
+
+  static async #onConfigureTiers() {
+    const ALL_SOURCES = ["open5e", "aidedd", "roll20", "ddb", "wikidot"];
+    let tierConfig;
+    try {
+      tierConfig = JSON.parse(game.settings.get(MODULE_ID, "tierConfig"));
+    } catch {
+      tierConfig = { quick: ["open5e"], standard: ["open5e", "aidedd", "roll20"], deep: ALL_SOURCES };
+    }
+
+    let formHtml = `<form class="ci-tier-config">`;
+    for (const tier of ["quick", "standard", "deep"]) {
+      const current = tierConfig[tier] || [];
+      formHtml += `<fieldset><legend>${tier.charAt(0).toUpperCase() + tier.slice(1)}</legend>`;
+      for (const src of ALL_SOURCES) {
+        const checked = current.includes(src) ? "checked" : "";
+        formHtml += `<label><input type="checkbox" name="${tier}" value="${src}" ${checked} /> ${src}</label><br/>`;
+      }
+      formHtml += `</fieldset>`;
+    }
+    formHtml += `</form>`;
+
+    const dlg = new Dialog({
+      title: "Configure Search Tiers",
+      content: formHtml,
+      buttons: {
+        save: {
+          label: "Save",
+          callback: async (html) => {
+            const newConfig = {};
+            for (const tier of ["quick", "standard", "deep"]) {
+              newConfig[tier] = [...html[0].querySelectorAll(`input[name="${tier}"]:checked`)].map(el => el.value);
+            }
+            await game.settings.set(MODULE_ID, "tierConfig", JSON.stringify(newConfig));
+            ui.notifications.info("Compendomize: Search tier configuration saved.");
+          },
+        },
+        cancel: { label: "Cancel" },
+      },
+      default: "save",
+    });
+    dlg.render(true);
   }
 
   /* ------------------------------ Public API ------------------------------ */

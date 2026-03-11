@@ -3,10 +3,10 @@
  */
 
 const MODULE_ID = "fvtt-compendium-importer";
-const FOLDER_NAME = "Compendium Importer";
+const FOLDER_NAME = "Compendomize";
 
 const MACRO = {
-  name: "Quick Import",
+  name: "Compendomize: Quick Import",
   icon: "icons/tools/scribal/magnifying-glass.webp",
   command: `
 const { ImporterApp } = await import("/modules/fvtt-compendium-importer/scripts/apps/ImporterApp.mjs");
@@ -34,7 +34,7 @@ export async function createMacros() {
   }
 
   // Delete old macros from previous versions
-  const oldNames = ["Quick Monster Import", "Quick Spell Import", "Quick Item Import", "Search Open5e", "Import by URL"];
+  const oldNames = ["Quick Monster Import", "Quick Spell Import", "Quick Item Import", "Search Open5e", "Import by URL", "Quick Import"];
   for (const name of oldNames) {
     const old = game.macros.find((m) => m.name === name && m.folder?.id === folder.id);
     if (old) await old.delete();

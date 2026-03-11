@@ -11,7 +11,7 @@ const MODULE_ID = "fvtt-compendium-importer";
 /* ---------------------------------- Init ---------------------------------- */
 
 Hooks.once("init", () => {
-  console.log(`${MODULE_ID} | Initializing Compendium Importer`);
+  console.log(`${MODULE_ID} | Initializing Compendomize`);
 
   // Register Handlebars helpers
   Handlebars.registerHelper("eq", function (a, b) {
@@ -118,6 +118,19 @@ Hooks.once("init", () => {
     default: "http://localhost:3001",
   });
 
+  game.settings.register(MODULE_ID, "tierConfig", {
+    name: "Search Tier Configuration",
+    hint: "Configure which sources appear in each search tier",
+    scope: "world",
+    config: false,
+    type: String,
+    default: JSON.stringify({
+      quick: ["open5e"],
+      standard: ["open5e", "aidedd", "roll20"],
+      deep: ["open5e", "aidedd", "roll20", "ddb", "wikidot"],
+    }),
+  });
+
   game.settings.register(MODULE_ID, "autoCreateMacros", {
     name: "COMPIMPORTER.Settings.AutoCreateMacros",
     hint: "COMPIMPORTER.Settings.AutoCreateMacrosHint",
@@ -159,7 +172,7 @@ async function checkProxyHealth() {
   }
 
   ui.notifications.warn(
-    `<b>Compendium Importer:</b> CORS proxy not running at <code>${proxyUrl}</code>. ` +
+    `<b>Compendomize:</b> CORS proxy not running at <code>${proxyUrl}</code>. ` +
     `DDB, Wikidot, and Roll20 imports will not work. ` +
     `Run <code>proxy/setup.bat</code> (Windows) or <code>proxy/setup.sh</code> (Linux) on your Foundry server to install it as an auto-start service.`,
     { permanent: true }

@@ -1,6 +1,6 @@
 {
   "COMPIMPORTER": {
-    "Title": "Compendium Importer",
+    "Title": "Compendomize",
     "Search": "Search",
     "SearchPlaceholder": "Search monsters, spells, items...",
     "Loading": "Searching...",
@@ -27,7 +27,7 @@
       "AutoCreateMacros": "Auto-Create Macros",
       "AutoCreateMacrosHint": "Create a Quick Import macro on first load."
     },
-    "SidebarButton": "Import",
-    "ChatCommand": "Usage: /import <search term>"
+    "SidebarButton": "Compendomize",
+    "ChatCommand": "Compendomize — Usage: /import <search term>"
   }
 }

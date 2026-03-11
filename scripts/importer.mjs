@@ -182,6 +182,25 @@ function applySpellPreparation(itemData, mode, uses) {
 }
 
 /**
+ * Download an external image via CORS proxy and upload to Foundry's filesystem.
+ */
+async function downloadAndUploadImage(url, filename) {
+  try {
+    const proxyUrl = game.settings.get(MODULE_ID, "corsProxyUrl");
+    const fetchUrl = proxyUrl ? `${proxyUrl.replace(/\/+$/, "")}/proxy?url=${encodeURIComponent(url)}` : url;
+    const response = await fetch(fetchUrl);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    const file = new File([blob], filename, { type: blob.type || "image/png" });
+    const result = await FilePicker.upload("data", "compendomize-images", file);
+    return result?.path || null;
+  } catch (err) {
+    console.warn(`${MODULE_ID} | Image download failed for ${url}:`, err);
+    return null;
+  }
+}
+
+/**
  * Import as Actor (NPC).
  */
 async function importAsActor(result, data) {
@@ -198,7 +217,7 @@ async function importAsActor(result, data) {
       system: {
         details: {
           biography: { value: generatePreview(result) },
-          source: { custom: result.sourceLabel ?? "Compendium Importer" },
+          source: { custom: result.sourceLabel ?? "Compendomize" },
         },
       },
     };
@@ -216,6 +235,17 @@ async function importAsActor(result, data) {
   // Create embedded items (actions, features, etc.)
   if (embeddedItems.length > 0) {
     await actor.createEmbeddedDocuments("Item", embeddedItems);
+  }
+
+  // Download and localize external images
+  if (actorData.img && actorData.img.startsWith("http")) {
+    const localPath = await downloadAndUploadImage(
+      actorData.img,
+      `${actorData.name.replace(/[^a-z0-9]/gi, "-")}.png`
+    );
+    if (localPath) {
+      await actor.update({ img: localPath, "prototypeToken.texture.src": localPath });
+    }
   }
 
   // Resolve and add spells asynchronously
@@ -269,7 +299,7 @@ async function importAsItem(result, data) {
       type: "loot",
       system: {
         description: { value: generatePreview(result) },
-        source: { custom: result.sourceLabel ?? "Compendium Importer" },
+        source: { custom: result.sourceLabel ?? "Compendomize" },
       },
     };
   }
@@ -280,7 +310,7 @@ async function importAsItem(result, data) {
       type: "feat",
       system: {
         description: { value: generatePreview(result) },
-        source: { custom: result.sourceLabel ?? "Compendium Importer" },
+        source: { custom: result.sourceLabel ?? "Compendomize" },
       },
     };
   }

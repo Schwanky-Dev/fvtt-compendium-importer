@@ -295,7 +295,69 @@ function parseAoETarget(desc) {
 }
 
 /**
+ * Generate a random 16-char hex ID for Activities.
+ * In-browser, foundry.utils.randomID(16) is available, but we provide a fallback.
+ */
+function generateActivityId() {
+  if (typeof foundry !== "undefined" && foundry.utils?.randomID) {
+    return foundry.utils.randomID(16);
+  }
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let id = "";
+  for (let i = 0; i < 16; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
+
+/**
+ * Parse damage into the new Activities damage format.
+ * Returns array of { number, denomination, bonus, types } objects.
+ */
+function parseDamageForActivity(desc) {
+  if (!desc) return [];
+  const parts = [];
+
+  // Primary: "Hit: 6 (1d8 + 2) slashing damage"
+  const primary = desc.match(/Hit:\s*\d+\s*\((\d+)d(\d+)(?:\s*([+\-]\s*\d+))?\)\s*(\w+)\s*damage/i);
+  if (primary) {
+    parts.push({
+      number: parseInt(primary[1]),
+      denomination: parseInt(primary[2]),
+      bonus: primary[3] ? primary[3].replace(/\s+/g, "") : "",
+      types: [primary[4].toLowerCase()],
+    });
+  }
+
+  // Additional: "plus 3 (1d6) fire damage"
+  const addlRe = /plus\s+\d+\s*\((\d+)d(\d+)(?:\s*([+\-]\s*\d+))?\)\s*(\w+)\s*damage/gi;
+  let addl;
+  while ((addl = addlRe.exec(desc)) !== null) {
+    parts.push({
+      number: parseInt(addl[1]),
+      denomination: parseInt(addl[2]),
+      bonus: addl[3] ? addl[3].replace(/\s+/g, "") : "",
+      types: [addl[4].toLowerCase()],
+    });
+  }
+
+  // Save-based damage
+  if (parts.length === 0) {
+    const saveDmg = desc.match(/(?:takes?|taking|deals?)\s+\d+\s*\((\d+)d(\d+)(?:\s*([+\-]\s*\d+))?\)\s*(\w+)\s*damage/i);
+    if (saveDmg) {
+      parts.push({
+        number: parseInt(saveDmg[1]),
+        denomination: parseInt(saveDmg[2]),
+        bonus: saveDmg[3] ? saveDmg[3].replace(/\s+/g, "") : "",
+        types: [saveDmg[4].toLowerCase()],
+      });
+    }
+  }
+
+  return parts;
+}
+
+/**
  * Build a fully-populated action item for a monster.
+ * Produces BOTH legacy fields (dnd5e v2) AND Activities (dnd5e v3+).
  */
 function buildActionItem(action, type = "natural") {
   const desc = action.desc || "";
@@ -309,7 +371,7 @@ function buildActionItem(action, type = "natural") {
     img: pickActionIcon(action),
     system: {
       description: { value: desc },
-      source: { custom: "Compendium Importer" },
+      source: { custom: "Compendomize" },
       activation: {
         type: type === "legendary" ? "legendary" : type === "lair" ? "lair" : "action",
         cost: 1,
@@ -330,43 +392,99 @@ function buildActionItem(action, type = "natural") {
     if (costMatch) item.system.activation.cost = parseInt(costMatch[1]);
   }
 
-  // Action type
+  // === Legacy fields (dnd5e v2 compat) ===
   if (actionType) {
     item.system.actionType = actionType;
   }
 
-  // Attack bonus (weapon and spell attacks)
   if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
     const bonus = parseAttackBonus(desc);
     if (bonus) {
       item.system.attack = { bonus, flat: true };
-      item.system.ability = ""; // flat bonus, don't derive from ability
+      item.system.ability = "";
     }
   }
 
-  // Damage
   const { parts, versatile } = parseDamage(desc);
   if (parts.length > 0) {
     item.system.damage = { parts };
     if (versatile) item.system.damage.versatile = versatile;
   }
 
-  // Range
   const range = parseRange(desc);
   if (range) item.system.range = range;
 
-  // Target
   if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
     item.system.target = { value: 1, type: "creature" };
   }
 
-  // Save DC
   if (isSave) {
     const save = parseSaveDC(desc);
     if (save) item.system.save = save;
-    // AoE target
     const aoe = parseAoETarget(desc);
     if (aoe) item.system.target = aoe;
+  }
+
+  // === Activities (dnd5e v3+) ===
+  if (actionType) {
+    const activityId = generateActivityId();
+    const activationType = type === "legendary" ? "legendary" : type === "lair" ? "lair" : "action";
+    let activationCost = 1;
+    if (type === "legendary") {
+      const costMatch = desc.match(/costs?\s+(\d+)\s+actions?/i);
+      if (costMatch) activationCost = parseInt(costMatch[1]);
+    }
+
+    const activity = {
+      type: (isWeaponAttack || actionType === "msak" || actionType === "rsak") ? "attack" : isSave ? "save" : "utility",
+      activation: { type: activationType, value: activationCost },
+      description: { chatFlavor: "" },
+      duration: { units: "inst", concentration: false },
+      range: {},
+      target: {},
+      damage: { parts: [] },
+    };
+
+    // Attack configuration
+    if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
+      const bonus = parseAttackBonus(desc);
+      if (bonus) {
+        activity.attack = { bonus: `+${bonus}`, flat: true };
+        activity.type = "attack";
+      }
+    }
+
+    // Save configuration
+    if (isSave) {
+      const save = parseSaveDC(desc);
+      if (save) {
+        activity.save = { ability: save.ability, dc: { calculation: "flat", value: save.dc } };
+      }
+    }
+
+    // Damage parts (new format)
+    const activityDamage = parseDamageForActivity(desc);
+    if (activityDamage.length > 0) {
+      activity.damage = { parts: activityDamage };
+    }
+
+    // Range
+    if (range) {
+      activity.range = { value: range.value, units: range.units || "ft" };
+      if (range.long) activity.range.long = range.long;
+    }
+
+    // Target
+    if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
+      activity.target = { affects: { count: "1", type: "creature" } };
+    } else if (isSave) {
+      const aoe = parseAoETarget(desc);
+      if (aoe) {
+        activity.target = { template: { value: aoe.value, type: aoe.type, units: aoe.units || "ft" } };
+      }
+    }
+
+    item.system.activities = { [activityId]: activity };
   }
 
   return item;

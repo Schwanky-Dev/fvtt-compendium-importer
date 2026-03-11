@@ -13,6 +13,7 @@
         <button type="button" class="ci-pass-btn {{#if (eq searchPass 'quick')}}active{{/if}}" data-pass="quick" title="Primary source only">Quick</button>
         <button type="button" class="ci-pass-btn {{#if (eq searchPass 'standard')}}active{{/if}}" data-pass="standard" title="Open5e + AideDD + Roll20">Standard</button>
         <button type="button" class="ci-pass-btn {{#if (eq searchPass 'deep')}}active{{/if}}" data-pass="deep" title="All enabled sources">Deep</button>
+        <button type="button" class="ci-tier-config-btn" data-action="configureTiers" title="Configure search tiers"><i class="fas fa-cog"></i></button>
       </div>
       <label class="ci-exact-toggle">
         <input type="checkbox" name="exactMatch" {{#if exactMatch}}checked{{/if}} />
