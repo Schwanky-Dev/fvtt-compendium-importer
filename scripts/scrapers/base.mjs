@@ -48,7 +48,7 @@ export class BaseScraper {
     const proxyUrl = game.settings.get("fvtt-compendium-importer", "corsProxyUrl");
     if (proxyUrl && this.constructor.requiresProxy) {
       const base = proxyUrl.replace(/\/+$/, "");
-      return fetch(`${base}/${url}`, opts);
+      return fetch(`${base}/proxy?url=${encodeURIComponent(url)}`, opts);
     }
     return fetch(url, opts);
   }

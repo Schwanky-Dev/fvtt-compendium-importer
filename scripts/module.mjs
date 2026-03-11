@@ -71,11 +71,11 @@ Hooks.once("init", () => {
 
   game.settings.register(MODULE_ID, "corsProxyUrl", {
     name: "CORS Proxy URL",
-    hint: "URL of a CORS proxy for DDB/Roll20/Wikidot scraping. Leave blank to disable. Example: http://localhost:8081",
+    hint: "URL of a CORS proxy for DDB/Roll20/Wikidot scraping. Leave blank to fall back to direct fetch. Run: node proxy/server.mjs",
     scope: "world",
     config: true,
     type: String,
-    default: "",
+    default: "http://localhost:3001",
   });
 
   game.settings.register(MODULE_ID, "autoCreateMacros", {

@@ -1,125 +1,98 @@
-#!/usr/bin/env node
 /**
- * Lightweight CORS proxy for Compendium Importer.
- * Run alongside Foundry to enable DDB, Roll20, and Wikidot scraping.
+ * Dead-simple CORS proxy for fvtt-compendium-importer.
+ * No dependencies — just `node proxy/server.mjs` and go.
  *
- * Usage: node server.mjs [--port 8081] [--allowed-origins http://localhost:30000]
- *
- * Requests: GET http://localhost:8081/https://www.dndbeyond.com/monsters/goblin
- * The proxy strips its own URL prefix and fetches the target, returning with CORS headers.
+ * Usage: GET http://localhost:3001/proxy?url=ENCODED_URL
+ * Health: GET http://localhost:3001/health
  */
 
 import http from "node:http";
 import https from "node:https";
-import { URL } from "node:url";
 
-const args = process.argv.slice(2);
-const PORT = parseInt(getArg("--port", "8081"));
-const ALLOWED_ORIGINS = getArg("--allowed-origins", "*").split(",");
-const ALLOWED_HOSTS = [
-  "www.dndbeyond.com",
-  "dndbeyond.com",
-  "roll20.net",
-  "www.roll20.net",
+const PORT = parseInt(process.env.PORT || "3001", 10);
+
+const ALLOWED_DOMAINS = new Set([
   "dnd5e.wikidot.com",
-  "api.open5e.com",
-];
+  "www.dndbeyond.com",
+  "open5e.com",
+  "roll20.net",
+]);
 
-function getArg(name, fallback) {
-  const idx = args.indexOf(name);
-  return idx !== -1 && args[idx + 1] ? args[idx + 1] : fallback;
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
 }
 
-const server = http.createServer(async (req, res) => {
-  // CORS preflight
-  if (req.method === "OPTIONS") {
-    setCorsHeaders(res, req.headers.origin);
-    res.writeHead(204);
-    res.end();
-    return;
-  }
+function respond(res, status, body, extraHeaders = {}) {
+  const headers = { ...corsHeaders(), "Content-Type": "application/json", ...extraHeaders };
+  res.writeHead(status, headers);
+  res.end(typeof body === "string" ? body : JSON.stringify(body));
+}
 
-  // Health check
-  if (req.url === "/" || req.url === "/health") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", allowedHosts: ALLOWED_HOSTS }));
-    return;
-  }
-
-  // Extract target URL from path (strip leading /)
-  const targetUrl = req.url.slice(1);
-  let parsed;
-  try {
-    parsed = new URL(targetUrl);
-  } catch {
-    res.writeHead(400, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Invalid target URL" }));
-    return;
-  }
-
-  // Allowlist check
-  if (!ALLOWED_HOSTS.includes(parsed.hostname)) {
-    res.writeHead(403, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: `Host ${parsed.hostname} not in allowlist` }));
-    return;
-  }
-
-  // Origin check
-  if (ALLOWED_ORIGINS[0] !== "*") {
-    const origin = req.headers.origin || "";
-    if (!ALLOWED_ORIGINS.includes(origin)) {
-      res.writeHead(403, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Origin not allowed" }));
-      return;
-    }
-  }
-
-  try {
-    const proxyRes = await proxyFetch(parsed, req);
-    setCorsHeaders(res, req.headers.origin);
-    res.writeHead(proxyRes.statusCode, proxyRes.headers);
-    proxyRes.pipe(res);
-  } catch (err) {
-    setCorsHeaders(res, req.headers.origin);
-    res.writeHead(502, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: err.message }));
-  }
-});
-
-function proxyFetch(url, req) {
+function proxyFetch(targetUrl) {
   return new Promise((resolve, reject) => {
-    const mod = url.protocol === "https:" ? https : http;
-    const proxyReq = mod.request(
-      url,
-      {
-        method: req.method,
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          Accept: req.headers.accept || "text/html,application/json,*/*",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-        timeout: 15000,
-      },
-      resolve
-    );
-    proxyReq.on("error", reject);
-    proxyReq.on("timeout", () => {
-      proxyReq.destroy();
-      reject(new Error("Proxy request timed out"));
+    const mod = targetUrl.startsWith("https") ? https : http;
+    const req = mod.get(targetUrl, { headers: { "User-Agent": "Mozilla/5.0 (compatible; CORSProxy/1.0)" } }, (upstream) => {
+      const chunks = [];
+      upstream.on("data", (c) => chunks.push(c));
+      upstream.on("end", () => {
+        resolve({
+          status: upstream.statusCode,
+          headers: upstream.headers,
+          body: Buffer.concat(chunks),
+        });
+      });
     });
-    proxyReq.end();
+    req.on("error", reject);
+    req.setTimeout(15000, () => { req.destroy(); reject(new Error("timeout")); });
   });
 }
 
-function setCorsHeaders(res, origin) {
-  res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGINS[0] === "*" ? "*" : (origin || "*"));
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Access-Control-Max-Age", "86400");
-}
+const server = http.createServer(async (req, res) => {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, corsHeaders());
+    return res.end();
+  }
+
+  const url = new URL(req.url, `http://localhost:${PORT}`);
+
+  if (url.pathname === "/health") {
+    return respond(res, 200, { status: "ok" });
+  }
+
+  if (url.pathname === "/proxy" && req.method === "GET") {
+    const target = url.searchParams.get("url");
+    if (!target) return respond(res, 400, { error: "Missing ?url= parameter" });
+
+    let parsed;
+    try { parsed = new URL(target); } catch { return respond(res, 400, { error: "Invalid URL" }); }
+
+    if (!ALLOWED_DOMAINS.has(parsed.hostname)) {
+      return respond(res, 403, { error: `Domain not allowed: ${parsed.hostname}` });
+    }
+
+    try {
+      const upstream = await proxyFetch(target);
+      const ct = upstream.headers["content-type"] || "application/octet-stream";
+      res.writeHead(upstream.status, {
+        ...corsHeaders(),
+        "Content-Type": ct,
+      });
+      res.end(upstream.body);
+    } catch (err) {
+      return respond(res, 502, { error: `Proxy error: ${err.message}` });
+    }
+    return;
+  }
+
+  respond(res, 404, { error: "Not found. Use /proxy?url= or /health" });
+});
 
 server.listen(PORT, () => {
   console.log(`CORS proxy listening on http://localhost:${PORT}`);
-  console.log(`Allowed hosts: ${ALLOWED_HOSTS.join(", ")}`);
-  console.log(`Usage: GET http://localhost:${PORT}/https://www.dndbeyond.com/monsters/goblin`);
+  console.log(`Allowed domains: ${[...ALLOWED_DOMAINS].join(", ")}`);
 });

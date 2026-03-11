@@ -29,7 +29,7 @@ export class WikidotScraper extends BaseScraper {
 
     const fetches = endpoints.map(async (ep) => {
       try {
-        const response = await fetch(ep.url, { mode: "cors" });
+        const response = await this.proxyFetch(ep.url);
         if (!response.ok) return;
 
         const html = await response.text();
