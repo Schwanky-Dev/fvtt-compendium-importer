@@ -37,30 +37,28 @@ export class DDBScraper extends BaseScraper {
 
         const listHtml = await listResponse.text();
 
-        // Step 2: Extract matching links from listing page
-        const linkPattern = new RegExp(`href="(${ep.linkPrefix}[^"]*)"`, "gi");
-        const foundLinks = new Set();
+        // Step 2: Extract names and links directly from listing page
+        // DDB listing links look like: <a class="link" href="/monsters/16824-chuul">Chuul</a>
+        const linkPattern = new RegExp(`<a[^>]*href="(${ep.linkPrefix}[^"]*)"[^>]*>([^<]+)</a>`, "gi");
+        const seen = new Set();
         let match;
         while ((match = linkPattern.exec(listHtml)) !== null) {
-          foundLinks.add(match[1]);
+          const path = match[1];
+          const name = match[2].trim();
+          if (!name || seen.has(path)) continue;
+          seen.add(path);
+          const slug = path.split("/").pop() || name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          results.push({
+            name,
+            slug,
+            type: ep.type,
+            source: DDBScraper.id,
+            sourceLabel: DDBScraper.label,
+            sourceColor: DDBScraper.color,
+            url: `${DDB_BASE}${path}`,
+            _raw: { name },
+          });
         }
-
-        // Step 3: Fetch each found page and parse it
-        const pagePromises = [...foundLinks].slice(0, 5).map(async (path) => {
-          try {
-            const pageUrl = `${DDB_BASE}${path}`;
-            const pageResponse = await this.proxyFetch(pageUrl);
-            if (!pageResponse.ok) return;
-
-            const html = await pageResponse.text();
-            const parsed = this._parseHTML(html, ep.type, path, pageUrl);
-            if (parsed) results.push(parsed);
-          } catch (err) {
-            console.debug(`Compendium Importer | DDB page fetch failed:`, err.message);
-          }
-        });
-
-        await Promise.all(pagePromises);
       } catch (err) {
         console.debug(`Compendium Importer | DDB search failed:`, err.message);
       }

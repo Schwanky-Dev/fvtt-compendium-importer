@@ -3,7 +3,8 @@ import { BaseScraper } from "./base.mjs";
 const ROLL20_BASE = "https://roll20.net/compendium/dnd5e";
 
 /**
- * Roll20 compendium scraper. Like DDB, requires a CORS proxy.
+ * Roll20 compendium scraper. Uses Roll20's JSON API for structured data.
+ * Requires a CORS proxy since Roll20 doesn't allow cross-origin requests.
  */
 export class Roll20Scraper extends BaseScraper {
   static id = "roll20";
@@ -27,66 +28,52 @@ export class Roll20Scraper extends BaseScraper {
     if (!this.isEnabled()) return [];
 
     const titleQuery = this._titleCase(query);
-    const categories = this._getCategories(category);
     const results = [];
 
-    const fetches = categories.map(async (cat) => {
-      try {
-        const url = `${ROLL20_BASE}/${encodeURIComponent(titleQuery)}#content`;
-        const response = await this.proxyFetch(url);
-        if (!response.ok) return;
+    try {
+      // Roll20 has a JSON API: /compendium/dnd5e/Name.json
+      const url = `${ROLL20_BASE}/${encodeURIComponent(titleQuery)}.json`;
+      const response = await this.proxyFetch(url);
+      if (!response.ok) return [];
 
-        const html = await response.text();
-        const parsed = this._parseHTML(html, cat.type, query);
-        if (parsed) results.push(parsed);
-      } catch (err) {
-        console.debug(`Compendium Importer | Roll20 fetch failed (CORS expected):`, err.message);
-      }
-    });
+      const json = await response.json();
+      if (!json.name) return [];
 
-    await Promise.all(fetches);
+      const cat = (json.data?.Category || "").toLowerCase();
+      // Filter by category if specified
+      if (category === "monsters" && cat !== "monsters") return [];
+      if (category === "spells" && cat !== "spells") return [];
+      if (category === "items" && !["items", "magic items"].includes(cat)) return [];
+
+      const type = cat === "monsters" ? "monster" : cat === "spells" ? "spell" : "magicitem";
+
+      results.push({
+        name: json.name,
+        slug: json.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        type,
+        source: Roll20Scraper.id,
+        sourceLabel: Roll20Scraper.label,
+        sourceColor: Roll20Scraper.color,
+        url: `${ROLL20_BASE}/${encodeURIComponent(json.name)}`,
+        _raw: json,
+      });
+    } catch (err) {
+      console.debug(`Compendium Importer | Roll20 fetch failed:`, err.message);
+    }
+
     return results;
   }
 
   async fetchDetails(result) {
-    const url = result.url || `${ROLL20_BASE}/${encodeURIComponent(result.name)}`;
+    // If we already have the full JSON data from search, return it
+    if (result._raw?.data) {
+      return { json: result._raw, type: result.type, slug: result.slug, source: "roll20" };
+    }
+
+    const url = `${ROLL20_BASE}/${encodeURIComponent(result.name)}.json`;
     const response = await this.proxyFetch(url);
     if (!response.ok) throw new Error(`Roll20 returned ${response.status}`);
-    const html = await response.text();
-    return { html, type: result.type, slug: result.slug, source: "roll20" };
-  }
-
-  _getCategories(category) {
-    const all = [
-      { type: "monster" },
-      { type: "spell" },
-      { type: "magicitem" },
-    ];
-    if (category === "monsters") return [all[0]];
-    if (category === "spells") return [all[1]];
-    if (category === "items") return [all[2]];
-    return all;
-  }
-
-  _parseHTML(html, type, query) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-
-    const entry = doc.querySelector(".compendium-entry, #content");
-    if (!entry) return null;
-
-    const name = doc.querySelector("h1.page-title, h1")?.textContent?.trim() || query;
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
-    return {
-      name,
-      slug,
-      type,
-      source: Roll20Scraper.id,
-      sourceLabel: Roll20Scraper.label,
-      sourceColor: Roll20Scraper.color,
-      url: `${ROLL20_BASE}/${encodeURIComponent(name)}`,
-      _raw: { html: entry.innerHTML, name },
-    };
+    const json = await response.json();
+    return { json, type: result.type, slug: result.slug, source: "roll20" };
   }
 }
