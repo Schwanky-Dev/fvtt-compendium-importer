@@ -114,25 +114,67 @@ export async function importResult(result, importType, scraper) {
 
 /**
  * Resolve a spell name to a Foundry Item data object.
- * Tries the dnd5e system compendium first, then Open5e API.
+ * Tries dnd5e system compendiums first (multiple pack names), then Open5e API.
  */
 async function resolveSpellItem(spellName, mode, uses) {
-  // Try dnd5e system compendium
-  try {
-    const pack = game.packs.get("dnd5e.spells");
-    if (pack) {
+  // Common alternate names (Open5e name → compendium name)
+  const SPELL_ALIASES = {
+    "acid arrow": "melf's acid arrow",
+    "melf's acid arrow": "acid arrow",
+    "tiny hut": "leomund's tiny hut",
+    "leomund's tiny hut": "tiny hut",
+    "arcane hand": "bigby's hand",
+    "bigby's hand": "arcane hand",
+    "black tentacles": "evard's black tentacles",
+    "evard's black tentacles": "black tentacles",
+    "floating disk": "tenser's floating disk",
+    "tenser's floating disk": "floating disk",
+    "hideous laughter": "tasha's hideous laughter",
+    "tasha's hideous laughter": "hideous laughter",
+    "instant summons": "drawmij's instant summons",
+    "arcanist's magic aura": "nystul's magic aura",
+    "irresistible dance": "otto's irresistible dance",
+    "secret chest": "leomund's secret chest",
+    "faithful hound": "mordenkainen's faithful hound",
+    "magnificent mansion": "mordenkainen's magnificent mansion",
+    "private sanctum": "mordenkainen's private sanctum",
+    "resilient sphere": "otiluke's resilient sphere",
+    "freezing sphere": "otiluke's freezing sphere",
+    "telepathic bond": "rary's telepathic bond",
+    "sword": "mordenkainen's sword",
+  };
+
+  // Try multiple compendium pack names (dnd5e v3 may use different names)
+  const PACK_NAMES = ["dnd5e.spells", "dnd5e.spells-2024", "dnd5e.items"];
+  const namesToTry = [spellName.toLowerCase()];
+  const alias = SPELL_ALIASES[spellName.toLowerCase()];
+  if (alias) namesToTry.push(alias.toLowerCase());
+
+  for (const packName of PACK_NAMES) {
+    try {
+      const pack = game.packs.get(packName);
+      if (!pack) continue;
       await pack.getIndex();
-      const entry = pack.index.find(i => i.name.toLowerCase() === spellName.toLowerCase());
-      if (entry) {
-        const doc = await pack.getDocument(entry._id);
-        const itemData = doc.toObject();
-        // Set preparation mode
-        applySpellPreparation(itemData, mode, uses);
-        return itemData;
+      for (const tryName of namesToTry) {
+        const entry = pack.index.find(i => i.name.toLowerCase() === tryName);
+        if (entry) {
+          const doc = await pack.getDocument(entry._id);
+          const itemData = doc.toObject();
+
+          // Strip legacy action fields if spell already has Activities (prevents dnd5e v3 double-migration)
+          if (itemData.system?.activities && Object.keys(itemData.system.activities).length > 0) {
+            delete itemData.system.actionType;
+            // Keep damage for reference but don't let it trigger migration
+            if (itemData.system.damage?.parts) delete itemData.system.damage.parts;
+          }
+
+          applySpellPreparation(itemData, mode, uses);
+          return itemData;
+        }
       }
+    } catch (err) {
+      console.warn(`${MODULE_ID} | Pack "${packName}" lookup failed for "${spellName}":`, err);
     }
-  } catch (err) {
-    console.warn(`${MODULE_ID} | Compendium lookup failed for "${spellName}":`, err);
   }
 
   // Try Open5e API
@@ -251,8 +293,17 @@ async function importAsActor(result, data) {
 
   // Resolve and add spells asynchronously
   if (spellcasting && spellcasting.spellNames.length > 0) {
+    // Deduplicate spell names (same name+mode = same spell)
+    const seenSpells = new Set();
+    const uniqueSpellNames = spellcasting.spellNames.filter(({ name, mode }) => {
+      const key = `${name.toLowerCase()}::${mode}`;
+      if (seenSpells.has(key)) return false;
+      seenSpells.add(key);
+      return true;
+    });
+
     const spellItems = [];
-    for (const { name, mode, uses } of spellcasting.spellNames) {
+    for (const { name, mode, uses } of uniqueSpellNames) {
       const item = await resolveSpellItem(name, mode, uses);
       if (item) {
         // Remove _id so Foundry generates a new one
