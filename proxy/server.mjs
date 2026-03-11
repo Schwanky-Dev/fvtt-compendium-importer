@@ -16,7 +16,11 @@ const ALLOWED_DOMAINS = new Set([
   "www.dndbeyond.com",
   "open5e.com",
   "roll20.net",
+  "www.roll20.net",
   "www.aidedd.org",
+  // Roll20 token/image hosting (S3)
+  "s3.amazonaws.com",
+  "files.d20.io",
 ]);
 
 function corsHeaders() {

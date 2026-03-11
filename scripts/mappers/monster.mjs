@@ -386,6 +386,11 @@ function buildActionItem(action, type = "natural") {
     };
   }
 
+  // For weapon-type items, set weapon type to "natural" for NPC attacks
+  if (item.type === "weapon") {
+    item.system.type = { value: "natural", baseItem: "" };
+  }
+
   // Legendary action cost
   if (type === "legendary") {
     const costMatch = desc.match(/costs?\s+(\d+)\s+actions?/i);
@@ -409,6 +414,14 @@ function buildActionItem(action, type = "natural") {
   if (parts.length > 0) {
     item.system.damage = { parts };
     if (versatile) item.system.damage.versatile = versatile;
+
+    // dnd5e v3+: weapon items need damage.base for the primary damage
+    if (item.type === "weapon") {
+      const primaryDmg = parseDamageForActivity(desc)[0];
+      if (primaryDmg) {
+        item.system.damage.base = primaryDmg;
+      }
+    }
   }
 
   const range = parseRange(desc);
@@ -435,52 +448,69 @@ function buildActionItem(action, type = "natural") {
       if (costMatch) activationCost = parseInt(costMatch[1]);
     }
 
+    const isAttack = isWeaponAttack || actionType === "msak" || actionType === "rsak";
+    const activityType = isAttack ? "attack" : isSave ? "save" : "utility";
+
     const activity = {
-      type: (isWeaponAttack || actionType === "msak" || actionType === "rsak") ? "attack" : isSave ? "save" : "utility",
-      activation: { type: activationType, value: activationCost },
+      _id: activityId,
+      type: activityType,
+      activation: { type: activationType, value: activationCost, override: false },
       description: { chatFlavor: "" },
-      duration: { units: "inst", concentration: false },
-      range: {},
-      target: {},
-      damage: { parts: [] },
+      duration: { units: "inst", concentration: false, override: false },
+      range: { override: false },
+      target: { override: false, prompt: true },
+      damage: { includeBase: true, parts: [] },
+      consumption: { scaling: { allowed: false }, targets: [] },
+      uses: { spent: 0, max: "" },
     };
 
-    // Attack configuration
-    if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
+    // Attack configuration — must include type.value and type.classification
+    if (isAttack) {
       const bonus = parseAttackBonus(desc);
-      if (bonus) {
-        activity.attack = { bonus: `+${bonus}`, flat: true };
-        activity.type = "attack";
-      }
+      const isMelee = actionType === "mwak" || actionType === "msak";
+      const isSpellAtk = actionType === "msak" || actionType === "rsak";
+      activity.attack = {
+        ability: "",
+        bonus: bonus || "",
+        flat: !!bonus,
+        type: {
+          value: isMelee ? "melee" : "ranged",
+          classification: isSpellAtk ? "spell" : "weapon",
+        },
+        critical: { threshold: null },
+      };
     }
 
     // Save configuration
     if (isSave) {
       const save = parseSaveDC(desc);
       if (save) {
-        activity.save = { ability: save.ability, dc: { calculation: "flat", value: save.dc } };
+        activity.save = {
+          ability: save.ability,
+          dc: { calculation: "flat", formula: String(save.dc) },
+        };
       }
     }
 
-    // Damage parts (new format)
+    // Damage parts (new format: { number, denomination, bonus, types })
     const activityDamage = parseDamageForActivity(desc);
     if (activityDamage.length > 0) {
-      activity.damage = { parts: activityDamage };
+      activity.damage = { includeBase: true, parts: activityDamage };
     }
 
     // Range
     if (range) {
-      activity.range = { value: range.value, units: range.units || "ft" };
+      activity.range = { value: range.value, units: range.units || "ft", override: false };
       if (range.long) activity.range.long = range.long;
     }
 
     // Target
-    if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
-      activity.target = { affects: { count: "1", type: "creature" } };
+    if (isAttack) {
+      activity.target = { affects: { count: "1", type: "creature" }, override: false, prompt: true };
     } else if (isSave) {
       const aoe = parseAoETarget(desc);
       if (aoe) {
-        activity.target = { template: { value: aoe.value, type: aoe.type, units: aoe.units || "ft" } };
+        activity.target = { template: { value: aoe.value, type: aoe.type, units: aoe.units || "ft" }, override: false, prompt: true };
       }
     }
 
@@ -704,9 +734,11 @@ export function mapMonster(data) {
   const spellcasting = parseSpellcasting(data.special_abilities);
 
   // Resolve portrait/token image from source data
+  // External URLs are stored in _externalImg for post-creation download (avoids CORS on token render)
   const portraitImg = data.img_main || data.img || data.token || data.image || null;
-  const actorImg = portraitImg || DEFAULT_ICON;
-  const tokenImg = portraitImg || DEFAULT_ICON;
+  const isExternal = portraitImg && portraitImg.startsWith("http");
+  const actorImg = isExternal ? DEFAULT_ICON : (portraitImg || DEFAULT_ICON);
+  const tokenImg = isExternal ? DEFAULT_ICON : (portraitImg || DEFAULT_ICON);
 
   // Build base actor data
   const actorData = {
@@ -762,7 +794,7 @@ export function mapMonster(data) {
     }
   }
 
-  return { actorData, spellcasting };
+  return { actorData, spellcasting, externalImg: isExternal ? portraitImg : null };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

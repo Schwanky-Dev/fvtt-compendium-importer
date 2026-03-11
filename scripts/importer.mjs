@@ -204,12 +204,13 @@ async function downloadAndUploadImage(url, filename) {
  * Import as Actor (NPC).
  */
 async function importAsActor(result, data) {
-  let actorData, spellcasting;
+  let actorData, spellcasting, externalImg;
 
   if (result.type === "monster") {
     const mapped = mapMonster(data);
     actorData = mapped.actorData;
     spellcasting = mapped.spellcasting;
+    externalImg = mapped.externalImg;
   } else {
     actorData = {
       name: data.name ?? result.name,
@@ -237,11 +238,11 @@ async function importAsActor(result, data) {
     await actor.createEmbeddedDocuments("Item", embeddedItems);
   }
 
-  // Download and localize external images
-  if (actorData.img && actorData.img.startsWith("http")) {
+  // Download and localize external images (stored separately to avoid CORS on token render)
+  if (externalImg) {
     const localPath = await downloadAndUploadImage(
-      actorData.img,
-      `${actorData.name.replace(/[^a-z0-9]/gi, "-")}.png`
+      externalImg,
+      `${(actorData.name || "monster").replace(/[^a-z0-9]/gi, "-")}.png`
     );
     if (localPath) {
       await actor.update({ img: localPath, "prototypeToken.texture.src": localPath });
