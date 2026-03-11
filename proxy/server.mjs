@@ -92,7 +92,7 @@ const server = http.createServer(async (req, res) => {
   respond(res, 404, { error: "Not found. Use /proxy?url= or /health" });
 });
 
-server.listen(PORT, () => {
-  console.log(`CORS proxy listening on http://localhost:${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`CORS proxy listening on http://0.0.0.0:${PORT}`);
   console.log(`Allowed domains: ${[...ALLOWED_DOMAINS].join(", ")}`);
 });

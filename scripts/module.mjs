@@ -94,7 +94,37 @@ Hooks.on("ready", async () => {
   console.log(`${MODULE_ID} | Ready`);
   await createMacros();
   registerChatCommand();
+  checkProxyHealth();
 });
+
+/* ----------------------------- Proxy Health -------------------------------- */
+
+async function checkProxyHealth() {
+  if (!game.user.isGM) return;
+
+  const proxyUrl = game.settings.get(MODULE_ID, "corsProxyUrl");
+  if (!proxyUrl) return;
+
+  try {
+    const resp = await fetch(`${proxyUrl.replace(/\/+$/, "")}/health`, {
+      method: "GET",
+      signal: AbortSignal.timeout(3000),
+    });
+    if (resp.ok) {
+      console.log(`${MODULE_ID} | CORS proxy is running at ${proxyUrl}`);
+      return;
+    }
+  } catch {
+    // Proxy not reachable
+  }
+
+  ui.notifications.warn(
+    `<b>Compendium Importer:</b> CORS proxy not running at <code>${proxyUrl}</code>. ` +
+    `DDB, Wikidot, and Roll20 imports will not work. ` +
+    `Run <code>proxy/setup.bat</code> (Windows) or <code>proxy/setup.sh</code> (Linux) on your Foundry server to install it as an auto-start service.`,
+    { permanent: true }
+  );
+}
 
 /* ----------------------------- Sidebar Button ----------------------------- */
 

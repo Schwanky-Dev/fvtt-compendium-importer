@@ -1,6 +1,6 @@
 # Compendium Importer for Foundry VTT
 
-[![Foundry v12-v13](https://img.shields.io/badge/Foundry-v12--v13-informational)](https://foundryvtt.com) [![dnd5e v3+](https://img.shields.io/badge/dnd5e-v3%2B-informational)](https://github.com/foundryvtt/dnd5e) [![Version 1.5.0](https://img.shields.io/badge/version-1.5.0-green)](https://github.com/Schwanky-Dev/fvtt-compendium-importer/releases)
+[![Foundry v12-v13](https://img.shields.io/badge/Foundry-v12--v13-informational)](https://foundryvtt.com) [![dnd5e v3+](https://img.shields.io/badge/dnd5e-v3%2B-informational)](https://github.com/foundryvtt/dnd5e) [![Version 1.7.0](https://img.shields.io/badge/version-1.7.0-green)](https://github.com/Schwanky-Dev/fvtt-compendium-importer/releases)
 
 Search and import monsters, spells, and items from multiple D&D 5e sources — Open5e, dnd5e.wikidot.com, D&D Beyond, and Roll20 — directly into your Foundry VTT world with one click. Results are automatically mapped to fully functional dnd5e system Actors and Items with parsed attacks, damage, spells, Active Effects, and more.
 
@@ -61,22 +61,54 @@ On first load (if enabled), a **Quick Import** macro is created in a "Compendium
 
 ## CORS Proxy
 
-D&D Beyond, Wikidot, and Roll20 block cross-origin requests. To use these sources, run the included CORS proxy:
+D&D Beyond, Wikidot, and Roll20 block cross-origin requests. To use these sources, the included CORS proxy must be running on your Foundry server machine.
+
+### Quick Setup (Recommended)
+
+Run the setup script **once** on your Foundry server. It installs the proxy as an auto-start service so you never have to think about it again.
+
+**Windows** (run as Administrator):
+```
+cd modules\fvtt-compendium-importer\proxy
+setup.bat
+```
+
+**Linux:**
+```bash
+cd modules/fvtt-compendium-importer/proxy
+chmod +x setup.sh
+./setup.sh
+```
+
+The proxy runs on port 3001 and binds to `0.0.0.0` (accessible from any machine on your network). Set the **CORS Proxy URL** in module settings to `http://<YOUR_SERVER_IP>:3001` (e.g. `http://192.168.1.121:3001`).
+
+If the proxy isn't running when Foundry starts, the GM will see a warning notification with setup instructions.
+
+### Manual Start
+
+If you prefer not to install the service:
 
 ```bash
 cd modules/fvtt-compendium-importer/proxy
 node server.mjs
 ```
 
-Options:
+### Managing the Service
 
-```bash
-node server.mjs --port 8081 --allowed-origins http://localhost:30000
+**Windows:** The scheduled task is named `CompendiumImporterProxy`. Manage it via Task Scheduler or:
+```
+schtasks /Query /TN CompendiumImporterProxy
+schtasks /Delete /TN CompendiumImporterProxy /F
 ```
 
-Then set the **CORS Proxy URL** in module settings to `http://localhost:8081`.
+**Linux:**
+```bash
+systemctl --user status compendium-importer-proxy
+systemctl --user stop compendium-importer-proxy
+systemctl --user disable compendium-importer-proxy
+```
 
-The proxy only allows requests to a hardcoded allowlist of hosts (dndbeyond.com, roll20.net, dnd5e.wikidot.com, api.open5e.com).
+The proxy only allows requests to a hardcoded allowlist of hosts (dndbeyond.com, roll20.net, dnd5e.wikidot.com, open5e.com).
 
 **Note:** Open5e works without a proxy — it has proper CORS headers.
 
@@ -89,7 +121,7 @@ The proxy only allows requests to a hardcoded allowlist of hosts (dndbeyond.com,
 | **Enable D&D Beyond** | ❌ Off | Scrape D&D Beyond pages (requires CORS proxy) |
 | **Enable Roll20** | ❌ Off | Scrape Roll20 compendium (requires CORS proxy) |
 | **Source Filter** | All | Filter results: All Sources / Official WotC Only / Official + UA |
-| **CORS Proxy URL** | *(empty)* | URL of proxy server (e.g. `http://localhost:8081`) |
+| **CORS Proxy URL** | `http://localhost:3001` | URL of proxy server |
 | **Auto-Create Macros** | ✅ On | Create Quick Import macro on first load |
 
 ## Compatibility
