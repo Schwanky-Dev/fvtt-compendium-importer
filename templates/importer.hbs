@@ -15,6 +15,16 @@
         <button type="button" class="ci-pass-btn {{#if (eq searchPass 'deep')}}active{{/if}}" data-pass="deep" title="All enabled sources">Deep</button>
         <button type="button" class="ci-tier-config-btn" data-action="configureTiers" title="Configure search tiers"><i class="fas fa-cog"></i></button>
       </div>
+      <div class="ci-edition-group">
+        <label class="ci-edition-toggle">
+          <input type="checkbox" name="edition2014" {{#if edition2014}}checked{{/if}} />
+          2014
+        </label>
+        <label class="ci-edition-toggle">
+          <input type="checkbox" name="edition2024" {{#if edition2024}}checked{{/if}} />
+          2024
+        </label>
+      </div>
       <label class="ci-exact-toggle">
         <input type="checkbox" name="exactMatch" {{#if exactMatch}}checked{{/if}} />
         Exact match
@@ -46,6 +56,7 @@
             <div class="ci-row-info">
               <span class="ci-name">{{this.name}}</span>
               <span class="ci-badge ci-badge-type">{{this.typeBadge}}</span>
+              <span class="ci-badge ci-badge-edition ci-badge-edition-{{this.editionBadge}}">{{this.editionBadge}}</span>
               <span class="ci-badge ci-badge-source" style="background:{{this.sourceColor}}">{{this.sourceLabel}}</span>
               {{#if this.bookBadge}}<span class="ci-badge ci-badge-book" style="background:{{this.sourceBadgeColor}}">{{this.bookBadge}}</span>{{/if}}
               {{#if this.metaInfo}}<span class="ci-meta">{{this.metaInfo}}</span>{{/if}}

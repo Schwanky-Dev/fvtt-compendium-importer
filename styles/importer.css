@@ -120,6 +120,24 @@
   text-transform: capitalize;
 }
 
+.ci-edition-group {
+  display: flex;
+  gap: 8px;
+}
+
+.ci-edition-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #999;
+  cursor: pointer;
+}
+
+.ci-edition-toggle input[type="checkbox"] {
+  margin: 0;
+}
+
 .ci-exact-toggle {
   display: flex;
   align-items: center;
@@ -237,6 +255,26 @@
   color: white;
   font-weight: bold;
   opacity: 0.9;
+}
+
+.ci-badge-edition {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+}
+
+.ci-badge-edition-2014 {
+  background: rgba(76, 175, 80, 0.3);
+  color: #81C784;
+  border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.ci-badge-edition-2024 {
+  background: rgba(33, 150, 243, 0.3);
+  color: #64B5F6;
+  border: 1px solid rgba(33, 150, 243, 0.5);
 }
 
 .ci-meta {

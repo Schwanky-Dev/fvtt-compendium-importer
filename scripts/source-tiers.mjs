@@ -174,8 +174,53 @@ export function classifyDDB(url, name) {
 /*  Unified result tier assignment                                     */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/*  Edition classification                                             */
+/* ------------------------------------------------------------------ */
+
 /**
- * Assign sourceTier, sourceBadgeColor, and documentTitle to a search result.
+ * Determine the edition ("2014" or "2024") for a search result.
+ * Called after assignTier so sourceTier is already set.
+ * @param {object} result - SearchResult with sourceTier already assigned
+ * @returns {"2014"|"2024"}
+ */
+export function classifyEdition(result) {
+  // Explicit 2024 tier from source-tier classification
+  if (result.sourceTier === "2024") return "2024";
+
+  // Source-specific overrides
+  switch (result.source) {
+    case "open5e":
+      // Open5e SRD content is 2014
+      return "2014";
+
+    case "ddb":
+      // DDB primarily shows 2024 rules now
+      // But if source tier said "official" (2014), respect that
+      if (result.sourceTier === "official") return "2024"; // DDB default is 2024
+      return "2024";
+
+    case "roll20":
+      return "2014";
+
+    case "wikidot":
+      return "2014";
+
+    case "aidedd":
+      return "2014";
+
+    default:
+      // If tier is "official", it's 2014 WotC content
+      if (result.sourceTier === "official") return "2014";
+      // UA could be either but lean 2014
+      if (result.sourceTier === "ua") return "2014";
+      // Third-party default to 2014
+      return "2014";
+  }
+}
+
+/**
+ * Assign sourceTier, sourceBadgeColor, edition, and documentTitle to a search result.
  * Call this on every result after scraping.
  * @param {object} result - SearchResult object (mutated in place)
  */
@@ -231,4 +276,7 @@ export function assignTier(result) {
   }
 
   result.sourceBadgeColor = getTierColor(result.sourceTier);
+
+  // Assign edition tag
+  result.edition = classifyEdition(result);
 }

@@ -24,6 +24,10 @@
       "DefaultSearchPassHint": "Quick = primary source only. Standard = Open5e + AideDD + Roll20. Deep = all enabled sources.",
       "PrimarySource": "Primary Source (Quick mode)",
       "PrimarySourceHint": "Which source to use in Quick search mode.",
+      "Edition2014": "Enable 2014 Rules",
+      "Edition2014Hint": "Show results from 2014 edition sources (SRD, Open5e, Wikidot, Roll20, AideDD).",
+      "Edition2024": "Enable 2024 Rules",
+      "Edition2024Hint": "Show results from 2024 edition sources (D&D Beyond, dnd5e.spells-2024 compendium).",
       "AutoCreateMacros": "Auto-Create Macros",
       "AutoCreateMacrosHint": "Create a Quick Import macro on first load."
     },

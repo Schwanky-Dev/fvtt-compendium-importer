@@ -116,8 +116,14 @@ export async function importResult(result, importType, scraper) {
 /**
  * Resolve a spell name to a Foundry Item data object.
  * Tries dnd5e system compendiums first (multiple pack names), then Open5e API.
+ * Respects edition filter settings — if only one edition is enabled, only searches
+ * that edition's compendium pack. If both enabled, prefers the sourceEdition.
+ * @param {string} spellName
+ * @param {string} mode - "innate", "atwill", or "prepared"
+ * @param {number} [uses]
+ * @param {string} [sourceEdition] - "2014" or "2024", edition of the source monster
  */
-async function resolveSpellItem(spellName, mode, uses) {
+async function resolveSpellItem(spellName, mode, uses, sourceEdition) {
   // Common alternate names (Open5e name → compendium name)
   const SPELL_ALIASES = {
     "acid arrow": "melf's acid arrow",
@@ -145,8 +151,35 @@ async function resolveSpellItem(spellName, mode, uses) {
     "sword": "mordenkainen's sword",
   };
 
-  // Try multiple compendium pack names (dnd5e v3 may use different names)
-  const PACK_NAMES = ["dnd5e.spells", "dnd5e.spells-2024", "dnd5e.items"];
+  // Build pack list based on edition settings
+  let edition2014 = true, edition2024 = true;
+  try {
+    edition2014 = game.settings.get(MODULE_ID, "edition2014");
+    edition2024 = game.settings.get(MODULE_ID, "edition2024");
+  } catch { /* use defaults */ }
+
+  // Determine pack search order based on edition filters and source edition
+  const ALL_PACKS_2014 = ["dnd5e.spells"];
+  const ALL_PACKS_2024 = ["dnd5e.spells-2024"];
+  const FALLBACK_PACKS = ["dnd5e.items"];
+
+  let PACK_NAMES;
+  if (edition2014 && edition2024) {
+    // Both enabled: prefer the edition matching the source
+    if (sourceEdition === "2024") {
+      PACK_NAMES = [...ALL_PACKS_2024, ...ALL_PACKS_2014, ...FALLBACK_PACKS];
+    } else {
+      PACK_NAMES = [...ALL_PACKS_2014, ...ALL_PACKS_2024, ...FALLBACK_PACKS];
+    }
+  } else if (edition2024) {
+    PACK_NAMES = [...ALL_PACKS_2024, ...FALLBACK_PACKS];
+  } else if (edition2014) {
+    PACK_NAMES = [...ALL_PACKS_2014, ...FALLBACK_PACKS];
+  } else {
+    // Neither enabled (edge case) — search all
+    PACK_NAMES = [...ALL_PACKS_2014, ...ALL_PACKS_2024, ...FALLBACK_PACKS];
+  }
+
   const namesToTry = [spellName.toLowerCase()];
   const alias = SPELL_ALIASES[spellName.toLowerCase()];
   if (alias) namesToTry.push(alias.toLowerCase());
@@ -286,6 +319,9 @@ async function importAsActor(result, data) {
 
   // Resolve and add spells asynchronously
   if (spellcasting && spellcasting.spellNames.length > 0) {
+    // Determine the edition of the source monster for spell preference
+    const sourceEdition = result.edition || "2014";
+
     // Deduplicate spell names (same name+mode = same spell)
     const seenSpells = new Set();
     const uniqueSpellNames = spellcasting.spellNames.filter(({ name, mode }) => {
@@ -297,7 +333,7 @@ async function importAsActor(result, data) {
 
     const spellItems = [];
     for (const { name, mode, uses } of uniqueSpellNames) {
-      const item = await resolveSpellItem(name, mode, uses);
+      const item = await resolveSpellItem(name, mode, uses, sourceEdition);
       if (item) {
         // Remove _id so Foundry generates a new one
         delete item._id;

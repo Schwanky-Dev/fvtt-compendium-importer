@@ -9,7 +9,7 @@ import { Roll20Scraper } from "../scrapers/roll20.mjs";
 import { WikidotScraper } from "../scrapers/wikidot.mjs";
 import { AideDDScraper } from "../scrapers/aidedd.mjs";
 import { importResult, generatePreview } from "../importer.mjs";
-import { assignTier } from "../source-tiers.mjs";
+import { assignTier, classifyEdition } from "../source-tiers.mjs";
 
 const MODULE_ID = "fvtt-compendium-importer";
 
@@ -55,6 +55,8 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
   #searchPass = "standard";
   #exactMatch = false;
   #filterText = "";
+  #edition2014 = true;
+  #edition2024 = true;
 
   constructor(options = {}) {
     super(options);
@@ -62,6 +64,10 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       this.#searchPass = game.settings.get("fvtt-compendium-importer", "defaultSearchPass");
     } catch { /* use default */ }
+    try {
+      this.#edition2014 = game.settings.get("fvtt-compendium-importer", "edition2014");
+      this.#edition2024 = game.settings.get("fvtt-compendium-importer", "edition2024");
+    } catch { /* use defaults */ }
   }
 
   /** @type {string|null} pending query to execute after first render */
@@ -107,6 +113,24 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
+    // Edition filter toggles
+    const edition2014Toggle = this.element.querySelector('input[name="edition2014"]');
+    if (edition2014Toggle) {
+      edition2014Toggle.addEventListener("change", async (ev) => {
+        this.#edition2014 = ev.currentTarget.checked;
+        await game.settings.set("fvtt-compendium-importer", "edition2014", this.#edition2014);
+        this.render();
+      });
+    }
+    const edition2024Toggle = this.element.querySelector('input[name="edition2024"]');
+    if (edition2024Toggle) {
+      edition2024Toggle.addEventListener("change", async (ev) => {
+        this.#edition2024 = ev.currentTarget.checked;
+        await game.settings.set("fvtt-compendium-importer", "edition2024", this.#edition2024);
+        this.render();
+      });
+    }
+
     // Result filter input
     const filterInput = this.element.querySelector('input[name="resultFilter"]');
     if (filterInput) {
@@ -130,6 +154,12 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
       displayResults = displayResults.filter((r) => r.name.toLowerCase() === lq);
     }
 
+    // Apply edition filter
+    displayResults = displayResults.filter((r) => {
+      if (r.edition === "2024") return this.#edition2024;
+      return this.#edition2014; // 2014 is the default for anything not tagged 2024
+    });
+
     return {
       results: displayResults.map((r, i) => ({
         ...r,
@@ -139,6 +169,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         metaInfo: this.#metaInfo(r),
         bookBadge: r.documentTitle || "",
         sourceBadgeColor: r.sourceBadgeColor || "#F44336",
+        editionBadge: r.edition || "2014",
       })),
       loading: this.#loading,
       searchQuery: this.#searchQuery,
@@ -148,6 +179,8 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
       searchPass: this.#searchPass,
       exactMatch: this.#exactMatch,
       filterText: this.#filterText,
+      edition2014: this.#edition2014,
+      edition2024: this.#edition2024,
     };
   }
 

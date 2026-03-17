@@ -109,6 +109,24 @@ Hooks.once("init", () => {
     },
   });
 
+  game.settings.register(MODULE_ID, "edition2014", {
+    name: "COMPIMPORTER.Settings.Edition2014",
+    hint: "COMPIMPORTER.Settings.Edition2014Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
+  game.settings.register(MODULE_ID, "edition2024", {
+    name: "COMPIMPORTER.Settings.Edition2024",
+    hint: "COMPIMPORTER.Settings.Edition2024Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
   game.settings.register(MODULE_ID, "corsProxyUrl", {
     name: "CORS Proxy URL",
     hint: "URL of a CORS proxy for DDB/Roll20/Wikidot scraping. Leave blank to fall back to direct fetch. Run: node proxy/server.mjs",
