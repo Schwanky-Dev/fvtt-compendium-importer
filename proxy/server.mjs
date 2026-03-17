@@ -37,10 +37,25 @@ function respond(res, status, body, extraHeaders = {}) {
   res.end(typeof body === "string" ? body : JSON.stringify(body));
 }
 
-function proxyFetch(targetUrl) {
+function proxyFetch(targetUrl, maxRedirects = 5) {
   return new Promise((resolve, reject) => {
     const mod = targetUrl.startsWith("https") ? https : http;
     const req = mod.get(targetUrl, { headers: { "User-Agent": "Mozilla/5.0 (compatible; CORSProxy/1.0)" } }, (upstream) => {
+      const code = upstream.statusCode;
+      // Follow redirects (301, 302, 307, 308)
+      if ((code === 301 || code === 302 || code === 307 || code === 308) && upstream.headers.location) {
+        if (maxRedirects <= 0) {
+          return reject(new Error("Too many redirects"));
+        }
+        const next = new URL(upstream.headers.location, targetUrl).href;
+        // Validate redirect target is also on an allowed domain
+        const nextHost = new URL(next).hostname;
+        if (!ALLOWED_DOMAINS.has(nextHost)) {
+          return reject(new Error(`Redirect to disallowed domain: ${nextHost}`));
+        }
+        upstream.resume(); // drain the response
+        return proxyFetch(next, maxRedirects - 1).then(resolve, reject);
+      }
       const chunks = [];
       upstream.on("data", (c) => chunks.push(c));
       upstream.on("end", () => {

@@ -82,7 +82,19 @@ export class DDBScraper extends BaseScraper {
     const response = await this.proxyFetch(url);
     if (!response.ok) throw new Error(`DDB returned ${response.status}`);
     const html = await response.text();
-    return { html, type: result.type, slug: result.slug, source: "ddb" };
+
+    // Try to parse structured data from the DDB HTML page
+    const parsed = this._parseHTML(html, result.type, new URL(url).pathname, url);
+    if (parsed) {
+      return parsed._raw ?? { html, name: parsed.name, type: result.type, slug: result.slug, source: "ddb" };
+    }
+
+    // Parsing failed or returned null — DDB imports are link-only
+    console.warn(`Compendomize | DDB detail parsing returned no structured data for "${result.name}". Import will be link-only.`);
+    if (typeof ui !== "undefined" && ui.notifications) {
+      ui.notifications.warn(`D&D Beyond import for "${result.name}" is link-only — no stat data could be extracted.`);
+    }
+    return { html, name: result.name, type: result.type, slug: result.slug, source: "ddb", _ddbUrl: url };
   }
 
   _getSearchEndpoints(category, query) {

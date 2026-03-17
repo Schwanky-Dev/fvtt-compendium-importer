@@ -6,6 +6,7 @@ import { mapMonster, parseSpellcasting, previewMonster } from "./mappers/monster
 import { mapSpell, previewSpell } from "./mappers/spell.mjs";
 import { mapItem, previewItem } from "./mappers/item.mjs";
 import { normalizeRoll20 } from "./mappers/roll20-normalize.mjs";
+import { escapeHtml } from "./utils/escapeHtml.mjs";
 
 const MODULE_ID = "fvtt-compendium-importer";
 
@@ -51,13 +52,13 @@ function getMapper(result) {
 export function generatePreview(result) {
   // DDB results only have name + URL; no parseable stat data
   if (result.source === "ddb") {
-    const url = result.url || "#";
+    const url = escapeHtml(result.url || "#");
     return `<div class="ci-stat-block">` +
-      `<h2 class="ci-stat-name">${result.name}</h2>` +
+      `<h2 class="ci-stat-name">${escapeHtml(result.name)}</h2>` +
       `<div class="ci-stat-divider"></div>` +
-      `<p>Source: <strong>D&D Beyond</strong></p>` +
-      `<p>Stat data is not available from D&D Beyond (pages are dynamically rendered).</p>` +
-      `<p>Import will create a <strong>Journal Entry</strong> with a link to the D&D Beyond page.</p>` +
+      `<p>Source: <strong>D&amp;D Beyond</strong></p>` +
+      `<p>Stat data is not available from D&amp;D Beyond (pages are dynamically rendered).</p>` +
+      `<p>Import will create a <strong>Journal Entry</strong> with a link to the D&amp;D Beyond page.</p>` +
       `<p><a href="${url}" target="_blank" rel="noopener">${url}</a></p>` +
       `</div>`;
   }
@@ -71,7 +72,7 @@ export function generatePreview(result) {
     return preview(data);
   } catch (err) {
     console.error(`${MODULE_ID} | Preview generation failed:`, err);
-    return `<div class="ci-stat-block"><h2>${result.name}</h2><p>Preview generation failed: ${err.message}</p></div>`;
+    return `<div class="ci-stat-block"><h2>${escapeHtml(result.name)}</h2><p>Preview generation failed: ${escapeHtml(err.message)}</p></div>`;
   }
 }
 
@@ -338,8 +339,13 @@ async function importAsItem(result, data) {
     // mapMonster now returns { actorData, spellcasting } — handle both shapes
     itemData = mapped.actorData || mapped;
   } catch (err) {
+    const itemName = data.name ?? result.name ?? "Unknown";
+    console.warn(`${MODULE_ID} | Mapper failed for "${itemName}":`, err);
+    if (typeof ui !== "undefined" && ui.notifications) {
+      ui.notifications.warn(`Compendomize: Mapping failed for "${itemName}" (${err.message}). Imported as generic loot item.`);
+    }
     itemData = {
-      name: data.name ?? result.name,
+      name: itemName,
       type: "loot",
       system: {
         description: { value: generatePreview(result) },
@@ -371,9 +377,9 @@ async function importAsJournal(result, data) {
   let previewHTML = generatePreview(result);
   // For DDB results, include a direct link in the journal page
   if (data._ddbUrl) {
-    previewHTML = `<h2>${data.name ?? result.name}</h2>` +
-      `<p>Imported from <strong>D&D Beyond</strong>.</p>` +
-      `<p><a href="${data._ddbUrl}" target="_blank" rel="noopener">View on D&D Beyond</a></p>`;
+    previewHTML = `<h2>${escapeHtml(data.name ?? result.name)}</h2>` +
+      `<p>Imported from <strong>D&amp;D Beyond</strong>.</p>` +
+      `<p><a href="${escapeHtml(data._ddbUrl)}" target="_blank" rel="noopener">View on D&amp;D Beyond</a></p>`;
   }
   const journalData = {
     name: data.name ?? result.name,

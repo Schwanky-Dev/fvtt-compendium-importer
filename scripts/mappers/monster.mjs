@@ -2,6 +2,8 @@
  * Maps Open5e monster JSON → Foundry dnd5e Actor (NPC) data.
  */
 
+import { escapeHtml } from "../utils/escapeHtml.mjs";
+
 const DEFAULT_ICON = "icons/svg/mystery-man.svg";
 
 const ABILITY_MAP = {
@@ -674,12 +676,12 @@ export function mapMonster(data) {
 function buildBiography(data) {
   const parts = [];
   if (data.size || data.type) {
-    parts.push(`<p><em>${data.size ?? ""} ${data.type ?? ""}${data.subtype ? ` (${data.subtype})` : ""}, ${data.alignment ?? ""}</em></p>`);
+    parts.push(`<p><em>${escapeHtml(data.size ?? "")} ${escapeHtml(data.type ?? "")}${data.subtype ? ` (${escapeHtml(data.subtype)})` : ""}, ${escapeHtml(data.alignment ?? "")}</em></p>`);
   }
-  if (data.armor_desc) parts.push(`<p><strong>Armor:</strong> ${data.armor_desc}</p>`);
-  if (data.legendary_desc) parts.push(`<h3>Legendary Actions</h3><p>${data.legendary_desc}</p>`);
-  if (data.lair_desc) parts.push(`<h3>Lair Actions</h3><p>${data.lair_desc}</p>`);
-  if (data.desc) parts.push(`<h3>Description</h3><p>${data.desc}</p>`);
+  if (data.armor_desc) parts.push(`<p><strong>Armor:</strong> ${escapeHtml(data.armor_desc)}</p>`);
+  if (data.legendary_desc) parts.push(`<h3>Legendary Actions</h3><p>${escapeHtml(data.legendary_desc)}</p>`);
+  if (data.lair_desc) parts.push(`<h3>Lair Actions</h3><p>${escapeHtml(data.lair_desc)}</p>`);
+  if (data.desc) parts.push(`<h3>Description</h3><p>${escapeHtml(data.desc)}</p>`);
   return parts.join("\n");
 }
 
@@ -718,14 +720,14 @@ function parseConditions(str) {
 // ─── Preview (unchanged from original) ───────────────────────────────────────
 
 export function previewMonster(data) {
-  const hp = data.hit_points ?? "?";
-  const hd = data.hit_dice ?? "";
-  const ac = data.armor_class ?? "?";
-  const acDesc = data.armor_desc ? ` (${data.armor_desc})` : "";
+  const hp = escapeHtml(data.hit_points ?? "?");
+  const hd = escapeHtml(data.hit_dice ?? "");
+  const ac = escapeHtml(data.armor_class ?? "?");
+  const acDesc = data.armor_desc ? ` (${escapeHtml(data.armor_desc)})` : "";
 
   let html = `<div class="ci-stat-block">`;
-  html += `<h2 class="ci-stat-name">${data.name}</h2>`;
-  html += `<p class="ci-stat-meta"><em>${data.size ?? ""} ${data.type ?? ""}${data.subtype ? ` (${data.subtype})` : ""}, ${data.alignment ?? ""}</em></p>`;
+  html += `<h2 class="ci-stat-name">${escapeHtml(data.name)}</h2>`;
+  html += `<p class="ci-stat-meta"><em>${escapeHtml(data.size ?? "")} ${escapeHtml(data.type ?? "")}${data.subtype ? ` (${escapeHtml(data.subtype)})` : ""}, ${escapeHtml(data.alignment ?? "")}</em></p>`;
   html += `<div class="ci-stat-divider"></div>`;
   html += `<p><strong>Armor Class</strong> ${ac}${acDesc}</p>`;
   html += `<p><strong>Hit Points</strong> ${hp}${hd ? ` (${hd})` : ""}</p>`;
@@ -759,37 +761,37 @@ export function previewMonster(data) {
   if (data.strength_save != null || data.dexterity_save != null) {
     const saves = [];
     for (const [field, label] of [["strength_save","Str"],["dexterity_save","Dex"],["constitution_save","Con"],["intelligence_save","Int"],["wisdom_save","Wis"],["charisma_save","Cha"]]) {
-      if (data[field] != null) saves.push(`${label} +${data[field]}`);
+      if (data[field] != null) saves.push(`${label} +${escapeHtml(data[field])}`);
     }
     if (saves.length) html += `<p><strong>Saving Throws</strong> ${saves.join(", ")}</p>`;
   }
   if (data.skills && Object.keys(data.skills).length) {
-    html += `<p><strong>Skills</strong> ${Object.entries(data.skills).map(([k, v]) => `${k} +${v}`).join(", ")}</p>`;
+    html += `<p><strong>Skills</strong> ${Object.entries(data.skills).map(([k, v]) => `${escapeHtml(k)} +${escapeHtml(v)}`).join(", ")}</p>`;
   }
-  if (data.damage_resistances) html += `<p><strong>Damage Resistances</strong> ${data.damage_resistances}</p>`;
-  if (data.damage_immunities) html += `<p><strong>Damage Immunities</strong> ${data.damage_immunities}</p>`;
-  if (data.damage_vulnerabilities) html += `<p><strong>Damage Vulnerabilities</strong> ${data.damage_vulnerabilities}</p>`;
-  if (data.condition_immunities) html += `<p><strong>Condition Immunities</strong> ${data.condition_immunities}</p>`;
-  if (data.senses) html += `<p><strong>Senses</strong> ${data.senses}</p>`;
-  if (data.languages) html += `<p><strong>Languages</strong> ${data.languages}</p>`;
-  html += `<p><strong>Challenge</strong> ${data.challenge_rating ?? "?"} (${xpByCR(parseCR(data.challenge_rating))} XP)</p>`;
+  if (data.damage_resistances) html += `<p><strong>Damage Resistances</strong> ${escapeHtml(data.damage_resistances)}</p>`;
+  if (data.damage_immunities) html += `<p><strong>Damage Immunities</strong> ${escapeHtml(data.damage_immunities)}</p>`;
+  if (data.damage_vulnerabilities) html += `<p><strong>Damage Vulnerabilities</strong> ${escapeHtml(data.damage_vulnerabilities)}</p>`;
+  if (data.condition_immunities) html += `<p><strong>Condition Immunities</strong> ${escapeHtml(data.condition_immunities)}</p>`;
+  if (data.senses) html += `<p><strong>Senses</strong> ${escapeHtml(data.senses)}</p>`;
+  if (data.languages) html += `<p><strong>Languages</strong> ${escapeHtml(data.languages)}</p>`;
+  html += `<p><strong>Challenge</strong> ${escapeHtml(data.challenge_rating ?? "?")} (${xpByCR(parseCR(data.challenge_rating))} XP)</p>`;
   html += `<div class="ci-stat-divider"></div>`;
 
   if (data.special_abilities?.length) {
-    for (const ab of data.special_abilities) html += `<p><strong><em>${ab.name}.</em></strong> ${ab.desc}</p>`;
+    for (const ab of data.special_abilities) html += `<p><strong><em>${escapeHtml(ab.name)}.</em></strong> ${escapeHtml(ab.desc)}</p>`;
   }
   if (data.actions?.length) {
     html += `<h3>Actions</h3>`;
-    for (const act of data.actions) html += `<p><strong><em>${act.name}.</em></strong> ${act.desc}</p>`;
+    for (const act of data.actions) html += `<p><strong><em>${escapeHtml(act.name)}.</em></strong> ${escapeHtml(act.desc)}</p>`;
   }
   if (data.reactions?.length) {
     html += `<h3>Reactions</h3>`;
-    for (const r of data.reactions) html += `<p><strong><em>${r.name}.</em></strong> ${r.desc}</p>`;
+    for (const r of data.reactions) html += `<p><strong><em>${escapeHtml(r.name)}.</em></strong> ${escapeHtml(r.desc)}</p>`;
   }
   if (data.legendary_actions?.length) {
     html += `<h3>Legendary Actions</h3>`;
-    if (data.legendary_desc) html += `<p>${data.legendary_desc}</p>`;
-    for (const la of data.legendary_actions) html += `<p><strong><em>${la.name}.</em></strong> ${la.desc}</p>`;
+    if (data.legendary_desc) html += `<p>${escapeHtml(data.legendary_desc)}</p>`;
+    for (const la of data.legendary_actions) html += `<p><strong><em>${escapeHtml(la.name)}.</em></strong> ${escapeHtml(la.desc)}</p>`;
   }
   html += `</div>`;
   return html;

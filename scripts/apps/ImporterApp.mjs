@@ -64,7 +64,17 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     } catch { /* use default */ }
   }
 
+  /** @type {string|null} pending query to execute after first render */
+  #pendingQuery = null;
+
   _onRender(context, options) {
+    // Execute pending search query from openWithSearch
+    if (this.#pendingQuery) {
+      const q = this.#pendingQuery;
+      this.#pendingQuery = null;
+      this.doSearch(q);
+    }
+
     // Attach Enter key handler to search input
     const input = this.element.querySelector('input[name="query"]');
     if (input) {
@@ -352,10 +362,10 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async openWithSearch(query) {
     const app = new ImporterApp();
-    app.render(true);
     if (query) {
-      setTimeout(() => app.doSearch(query), 100);
+      app.#pendingQuery = query;
     }
+    app.render(true);
     return app;
   }
 }

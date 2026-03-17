@@ -4,6 +4,8 @@
  * Includes magic item effect parsing for dnd5e v3 schema.
  */
 
+import { escapeHtml } from "../utils/escapeHtml.mjs";
+
 const RARITY_MAP = {
   common: "common",
   uncommon: "uncommon",
@@ -399,7 +401,7 @@ function mapMagicItem(data) {
       weight: { value: 0, units: "lb" },
       rarity,
       equipped: false,
-      properties: new Set(["mgc"]), // All magic items get the magical property
+      properties: ["mgc"], // All magic items get the magical property
     },
     effects: [],
   };
@@ -489,21 +491,21 @@ export function mapItem(data, sourceType) {
  */
 export function previewItem(data, sourceType) {
   let html = `<div class="ci-stat-block ci-item-block">`;
-  html += `<h2 class="ci-stat-name">${data.name}</h2>`;
+  html += `<h2 class="ci-stat-name">${escapeHtml(data.name)}</h2>`;
 
   if (data.type) {
-    html += `<p class="ci-stat-meta"><em>${data.type}${data.rarity ? `, ${data.rarity}` : ""}</em></p>`;
+    html += `<p class="ci-stat-meta"><em>${escapeHtml(data.type)}${data.rarity ? `, ${escapeHtml(data.rarity)}` : ""}</em></p>`;
   } else if (sourceType === "weapon") {
-    html += `<p class="ci-stat-meta"><em>Weapon${data.category ? ` (${data.category})` : ""}</em></p>`;
+    html += `<p class="ci-stat-meta"><em>Weapon${data.category ? ` (${escapeHtml(data.category)})` : ""}</em></p>`;
   } else if (sourceType === "armor") {
-    html += `<p class="ci-stat-meta"><em>Armor${data.category ? ` (${data.category})` : ""}</em></p>`;
+    html += `<p class="ci-stat-meta"><em>Armor${data.category ? ` (${escapeHtml(data.category)})` : ""}</em></p>`;
   }
 
   // Source book
   if (data.document__title) {
     const isOfficial = (data.document__title ?? "").includes("SRD");
     const badgeClass = isOfficial ? "ci-badge-book-official" : "ci-badge-book-3p";
-    html += `<p class="ci-stat-source"><span class="ci-badge ${badgeClass}">📖 ${data.document__title}</span></p>`;
+    html += `<p class="ci-stat-source"><span class="ci-badge ${badgeClass}">📖 ${escapeHtml(data.document__title)}</span></p>`;
   }
 
   html += `<div class="ci-stat-divider"></div>`;
@@ -517,28 +519,28 @@ export function previewItem(data, sourceType) {
 
     const props = [];
     if (parsed.requiresAttunement) {
-      props.push(`<strong>Attunement:</strong> Required${parsed.attunementBy ? ` (by ${parsed.attunementBy})` : ""}`);
+      props.push(`<strong>Attunement:</strong> Required${parsed.attunementBy ? ` (by ${escapeHtml(parsed.attunementBy)})` : ""}`);
     }
     if (bonus) {
-      props.push(`<strong>Magical Bonus:</strong> +${bonus}`);
+      props.push(`<strong>Magical Bonus:</strong> +${escapeHtml(bonus)}`);
     }
     if (parsed.charges) {
-      let chargeStr = `<strong>Charges:</strong> ${parsed.charges}`;
-      if (parsed.recovery) chargeStr += ` (regains ${parsed.recovery} at dawn)`;
+      let chargeStr = `<strong>Charges:</strong> ${escapeHtml(parsed.charges)}`;
+      if (parsed.recovery) chargeStr += ` (regains ${escapeHtml(parsed.recovery)} at dawn)`;
       props.push(chargeStr);
     }
     if (parsed.resistances?.length) {
-      props.push(`<strong>Resistances:</strong> ${parsed.resistances.join(", ")}`);
+      props.push(`<strong>Resistances:</strong> ${parsed.resistances.map(r => escapeHtml(r)).join(", ")}`);
     }
     if (parsed.immunities?.length) {
-      props.push(`<strong>Immunities:</strong> ${parsed.immunities.join(", ")}`);
+      props.push(`<strong>Immunities:</strong> ${parsed.immunities.map(i => escapeHtml(i)).join(", ")}`);
     }
     if (parsed.statOverride) {
       const abilityName = Object.entries(ABILITY_MAP).find(([k, v]) => v === parsed.statOverride.ability && k.length > 3)?.[0] ?? parsed.statOverride.ability;
-      props.push(`<strong>${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}:</strong> Set to ${parsed.statOverride.value}`);
+      props.push(`<strong>${escapeHtml(abilityName.charAt(0).toUpperCase() + abilityName.slice(1))}:</strong> Set to ${escapeHtml(parsed.statOverride.value)}`);
     }
     if (parsed.spells?.length) {
-      props.push(`<strong>Spells:</strong> ${parsed.spells.join(", ")}`);
+      props.push(`<strong>Spells:</strong> ${parsed.spells.map(s => escapeHtml(s)).join(", ")}`);
     }
 
     if (props.length) {
@@ -548,26 +550,26 @@ export function previewItem(data, sourceType) {
   }
 
   if (data.requires_attunement && sourceType !== "magicitem") {
-    html += `<p><em>${data.requires_attunement}</em></p>`;
+    html += `<p><em>${escapeHtml(data.requires_attunement)}</em></p>`;
   }
 
   if (sourceType === "weapon") {
-    if (data.damage_dice) html += `<p><strong>Damage:</strong> ${data.damage_dice} ${data.damage_type ?? ""}</p>`;
-    if (data.weight) html += `<p><strong>Weight:</strong> ${data.weight} lb.</p>`;
-    if (data.cost) html += `<p><strong>Cost:</strong> ${data.cost}</p>`;
-    if (data.properties?.length) html += `<p><strong>Properties:</strong> ${data.properties.join(", ")}</p>`;
+    if (data.damage_dice) html += `<p><strong>Damage:</strong> ${escapeHtml(data.damage_dice)} ${escapeHtml(data.damage_type ?? "")}</p>`;
+    if (data.weight) html += `<p><strong>Weight:</strong> ${escapeHtml(data.weight)} lb.</p>`;
+    if (data.cost) html += `<p><strong>Cost:</strong> ${escapeHtml(data.cost)}</p>`;
+    if (data.properties?.length) html += `<p><strong>Properties:</strong> ${data.properties.map(p => escapeHtml(p)).join(", ")}</p>`;
   }
 
   if (sourceType === "armor") {
-    if (data.base_ac) html += `<p><strong>AC:</strong> ${data.base_ac}${data.max_dex_modifier != null ? ` (max Dex ${data.max_dex_modifier})` : ""}</p>`;
-    if (data.weight) html += `<p><strong>Weight:</strong> ${data.weight} lb.</p>`;
-    if (data.cost) html += `<p><strong>Cost:</strong> ${data.cost}</p>`;
-    if (data.strength_requirement) html += `<p><strong>Strength:</strong> ${data.strength_requirement}</p>`;
+    if (data.base_ac) html += `<p><strong>AC:</strong> ${escapeHtml(data.base_ac)}${data.max_dex_modifier != null ? ` (max Dex ${escapeHtml(data.max_dex_modifier)})` : ""}</p>`;
+    if (data.weight) html += `<p><strong>Weight:</strong> ${escapeHtml(data.weight)} lb.</p>`;
+    if (data.cost) html += `<p><strong>Cost:</strong> ${escapeHtml(data.cost)}</p>`;
+    if (data.strength_requirement) html += `<p><strong>Strength:</strong> ${escapeHtml(data.strength_requirement)}</p>`;
     if (data.stealth_disadvantage) html += `<p><strong>Stealth:</strong> Disadvantage</p>`;
   }
 
   html += `<div class="ci-stat-divider"></div>`;
-  html += `<p>${data.desc ?? ""}</p>`;
+  html += `<p>${escapeHtml(data.desc ?? "")}</p>`;
   html += `</div>`;
   return html;
 }

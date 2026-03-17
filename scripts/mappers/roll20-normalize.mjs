@@ -174,9 +174,9 @@ export function normalizeRoll20Spell(raw) {
   const d = hasDataObj && (raw.data.Category || raw.data.Level || raw.data.School) ? raw.data : raw;
   const name = d.Name || raw?.name || "Unknown";
 
-  // Parse components string "V S M" → { V, S, M }
-  const compStr = d.Components || "";
-  const components = compStr.toUpperCase();
+  // Parse components string "V S M" into boolean fields
+  const compStr = (d.Components || "").toUpperCase();
+  const components = compStr;
 
   // Parse level
   const level = d.Level || d["filter-Level"];
@@ -203,6 +203,9 @@ export function normalizeRoll20Spell(raw) {
     range: d.Range || "Self",
     duration: d.Duration || "Instantaneous",
     components: components,
+    requires_verbal_components: compStr.includes("V"),
+    requires_somatic_components: compStr.includes("S"),
+    requires_material_components: compStr.includes("M"),
     material: d.Material || "",
     concentration: (d.Duration || "").toLowerCase().includes("concentration"),
     ritual: isRitual ? "yes" : "no",

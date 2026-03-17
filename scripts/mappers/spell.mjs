@@ -2,6 +2,8 @@
  * Maps Open5e spell JSON → Foundry dnd5e Item (spell) data.
  */
 
+import { escapeHtml } from "../utils/escapeHtml.mjs";
+
 const SCHOOL_MAP = {
   Abjuration: "abj",
   Conjuration: "con",
@@ -249,34 +251,34 @@ function formatDescription(data) {
  */
 export function previewSpell(data) {
   let html = `<div class="ci-stat-block ci-spell-block">`;
-  html += `<h2 class="ci-stat-name">${data.name}</h2>`;
+  html += `<h2 class="ci-stat-name">${escapeHtml(data.name)}</h2>`;
 
   const levelStr = data.level_int === 0 || data.level === "Cantrip"
-    ? `${data.school} cantrip`
-    : `${ordinal(data.level_int ?? parseInt(data.level) ?? 1)}-level ${(data.school ?? "").toLowerCase()}`;
+    ? `${escapeHtml(data.school)} cantrip`
+    : `${ordinal(data.level_int ?? parseInt(data.level) ?? 1)}-level ${escapeHtml((data.school ?? "").toLowerCase())}`;
   html += `<p class="ci-stat-meta"><em>${levelStr}${data.concentration === "yes" ? " (concentration)" : ""}${data.can_be_cast_as_ritual ? " (ritual)" : ""}</em></p>`;
 
   html += `<div class="ci-stat-divider"></div>`;
-  html += `<p><strong>Casting Time:</strong> ${data.casting_time ?? "1 action"}</p>`;
-  html += `<p><strong>Range:</strong> ${data.range ?? "Self"}</p>`;
+  html += `<p><strong>Casting Time:</strong> ${escapeHtml(data.casting_time ?? "1 action")}</p>`;
+  html += `<p><strong>Range:</strong> ${escapeHtml(data.range ?? "Self")}</p>`;
 
   const comp = [];
   if (data.requires_verbal_components) comp.push("V");
   if (data.requires_somatic_components) comp.push("S");
-  if (data.requires_material_components) comp.push(`M (${data.material ?? ""})`);
+  if (data.requires_material_components) comp.push(`M (${escapeHtml(data.material ?? "")})`);
   html += `<p><strong>Components:</strong> ${comp.join(", ") || "None"}</p>`;
-  html += `<p><strong>Duration:</strong> ${data.duration ?? "Instantaneous"}</p>`;
+  html += `<p><strong>Duration:</strong> ${escapeHtml(data.duration ?? "Instantaneous")}</p>`;
 
   html += `<div class="ci-stat-divider"></div>`;
-  html += `<p>${data.desc ?? ""}</p>`;
+  html += `<p>${escapeHtml(data.desc ?? "")}</p>`;
 
   if (data.higher_level) {
-    html += `<p><strong>At Higher Levels.</strong> ${data.higher_level}</p>`;
+    html += `<p><strong>At Higher Levels.</strong> ${escapeHtml(data.higher_level)}</p>`;
   }
 
   // Classes
   if (data.dnd_class) {
-    html += `<p class="ci-spell-classes"><strong>Classes:</strong> ${data.dnd_class}</p>`;
+    html += `<p class="ci-spell-classes"><strong>Classes:</strong> ${escapeHtml(data.dnd_class)}</p>`;
   }
 
   html += `</div>`;
