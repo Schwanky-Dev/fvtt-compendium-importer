@@ -208,6 +208,11 @@ export class AideDDScraper extends BaseScraper {
 
   /**
    * Parse entries (traits) before the first "rub" div (Actions heading).
+   *
+   * For Spellcasting / Innate Spellcasting abilities, AideDD renders the
+   * spell-list lines as bare text nodes and inline elements (<em>, <a>, <br>)
+   * between <p> tags — not inside any <p>.  We detect this and walk DOM
+   * siblings to collect the continuation content into the desc field.
    */
   _parseSectionEntries(doc, afterSection, beforeSection) {
     const entries = [];
@@ -233,11 +238,57 @@ export class AideDDScraper extends BaseScraper {
       const em = p.querySelector("em");
       if (strong && em) {
         const name = (strong.textContent || em.textContent).trim().replace(/\.\s*$/, "");
-        const desc = p.textContent.replace(name, "").replace(/^\.\s*/, "").trim();
+        let desc = p.textContent.replace(name, "").replace(/^\.\s*/, "").trim();
+
+        // For spellcasting abilities, collect continuation content from DOM
+        // siblings that follow this <p> (bare text nodes, <em>, <a>, <br>)
+        // until the next <p> or <div class="rub">.
+        if (/^(Innate )?Spellcasting$/i.test(name)) {
+          const continuationLines = this._collectContinuationText(p);
+          if (continuationLines) {
+            desc = desc + "\n" + continuationLines;
+          }
+        }
+
         if (name && name.length < 100) entries.push({ name, desc });
       }
     }
     return entries.length ? entries : undefined;
+  }
+
+  /**
+   * Walk nextSibling nodes after a <p> element, collecting text content
+   * from bare text nodes and inline elements until hitting the next <p>,
+   * <div>, or end of parent.  Returns the collected text with <br>
+   * boundaries converted to newlines, or null if nothing found.
+   */
+  _collectContinuationText(pElement) {
+    const parts = [];
+    let currentLine = "";
+    let node = pElement.nextSibling;
+
+    while (node) {
+      // Stop at block-level elements (next <p>, <div>, etc.)
+      if (node.nodeType === 1 /* ELEMENT_NODE */) {
+        const tag = node.tagName?.toUpperCase();
+        if (tag === "P" || tag === "DIV") break;
+        if (tag === "BR") {
+          // <br> = line boundary — flush current line
+          if (currentLine.trim()) parts.push(currentLine.trim());
+          currentLine = "";
+        } else {
+          // Inline element (<em>, <a>, <strong>, etc.) — grab its text
+          currentLine += node.textContent || "";
+        }
+      } else if (node.nodeType === 3 /* TEXT_NODE */) {
+        currentLine += node.textContent || "";
+      }
+      node = node.nextSibling;
+    }
+    // Flush last line
+    if (currentLine.trim()) parts.push(currentLine.trim());
+
+    return parts.length ? parts.join("\n") : null;
   }
 
   /**
