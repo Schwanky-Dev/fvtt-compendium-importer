@@ -414,6 +414,46 @@ function parseSkills(skills) {
   return result;
 }
 
+// ─── French (AideDD) Spell Name Translation ──────────────────────────────────
+
+const FRENCH_SPELL_NAMES = {
+  "conjuring": "prestidigitation",
+  "frost ray": "ray of frost",
+  "magic detection": "detect magic",
+  "magic projectile": "magic missile",
+  "thundering wave": "thunderwave",
+  "thought detection": "detect thoughts",
+  "acid arrow of melf": "melf's acid arrow",
+  "animation of the dead": "animate dead",
+  "wilting": "blight",
+  "dimensional door": "dimension door",
+  "deadly mist": "cloudkill",
+  "scrutiny": "scrying",
+  "disintegration": "disintegrate",
+  "invulnerability": "globe of invulnerability",
+  "change of plan": "plane shift",
+  "monster domination": "dominate monster",
+  "stunning power word": "power word stun",
+  "word of mortal power": "power word kill",
+  // Skip "resistance to dismissal" — it's a feature, not a spell
+};
+
+// Names to silently discard (features masquerading as spell list entries)
+const FRENCH_NON_SPELLS = new Set([
+  "resistance to dismissal",
+]);
+
+/**
+ * Translate a French (AideDD) spell name to its English SRD equivalent.
+ * Returns the English name, or the original name if no translation exists.
+ * Returns null if the name should be skipped entirely.
+ */
+function translateFrenchSpell(name) {
+  const lower = name.toLowerCase().trim();
+  if (FRENCH_NON_SPELLS.has(lower)) return null;
+  return FRENCH_SPELL_NAMES[lower] || lower;
+}
+
 // ─── Spellcasting Parser ──────────────────────────────────────────────────────
 
 /**
@@ -422,6 +462,8 @@ function parseSkills(skills) {
  * where spellNames is an array of { name, mode, uses } objects.
  *   mode: "prepared" (regular slots), "innate" (innate), "atwill" (at-will/cantrip)
  *   uses: null for prepared/cantrip, number for innate (X/day)
+ *
+ * Supports both English SRD format and French AideDD format.
  */
 export function parseSpellcasting(specialAbilities) {
   if (!specialAbilities || !specialAbilities.length) return null;
@@ -442,26 +484,37 @@ export function parseSpellcasting(specialAbilities) {
     const isInnate = /innate/i.test(ab.name);
 
     // Parse spellcasting ability
+    // English: "Intelligence is its/their spellcasting ability"
     let abMatch = desc.match(/(\w+)\s+is\s+(?:their|its|his|her)\s+spellcasting ability/i);
     if (!abMatch) abMatch = desc.match(/spellcasting ability is (\w+)/i);
+    // French (AideDD): "His/Her/Its casting characteristic is Intelligence"
+    if (!abMatch) abMatch = desc.match(/casting characteristic is (\w+)/i);
     if (abMatch && !spellcastingAbility) {
       spellcastingAbility = ABILITY_NAME_TO_SHORT[abMatch[1].toLowerCase()] || null;
     }
 
     // Parse spell save DC
-    const dcMatch = desc.match(/spell save DC\s*(\d+)/i);
+    // English: "spell save DC 20"
+    let dcMatch = desc.match(/spell save DC\s*(\d+)/i);
+    // French (AideDD): "save roll against his DC 20 spells" or standalone "DC 20"
+    if (!dcMatch) dcMatch = desc.match(/save roll against (?:his|her|its|their) DC\s*(\d+)/i);
+    if (!dcMatch) dcMatch = desc.match(/\bDC\s*(\d+)\b/i);
     if (dcMatch && !spellDC) spellDC = parseInt(dcMatch[1]);
 
     // Parse spell attack bonus
-    const atkMatch = desc.match(/\+(\d+)\s+to hit with spell attacks/i);
+    // English: "+12 to hit with spell attacks"
+    let atkMatch = desc.match(/\+(\d+)\s+to hit with spell attacks/i);
+    // French (AideDD): "+12 to hit for attacks with a spell" / "+12 to hit with attacks with a spell"
+    if (!atkMatch) atkMatch = desc.match(/\+(\d+)\s+to hit (?:for|with) attacks with a spell/i);
     if (atkMatch && !spellAttackBonus) spellAttackBonus = parseInt(atkMatch[1]);
 
     if (isInnate) {
-      // "At will: detect magic, mage hand"
-      const atWillMatch = desc.match(/At will:\s*(.+)/im);
+      // "At will: detect magic, mage hand" (case-insensitive to catch "at will:" too)
+      const atWillMatch = desc.match(/at will:\s*(.+)/im);
       if (atWillMatch) {
         for (const name of splitSpellList(atWillMatch[1])) {
-          spellNames.push({ name, mode: "atwill", uses: null });
+          const translated = translateFrenchSpell(name);
+          if (translated) spellNames.push({ name: translated, mode: "atwill", uses: null });
         }
       }
       // "3/day each: counterspell, fireball"
@@ -470,20 +523,23 @@ export function parseSpellcasting(specialAbilities) {
       while ((dailyMatch = dailyRe.exec(desc)) !== null) {
         const uses = parseInt(dailyMatch[1]);
         for (const name of splitSpellList(dailyMatch[2])) {
-          spellNames.push({ name, mode: "innate", uses });
+          const translated = translateFrenchSpell(name);
+          if (translated) spellNames.push({ name: translated, mode: "innate", uses });
         }
       }
     } else {
       // Regular spellcasting
-      // "Cantrips (at will): fire bolt, light, mage hand"
-      const cantripMatch = desc.match(/Cantrips\s*\(at will\):\s*(.+)/im);
+      // English: "Cantrips (at will): fire bolt, light, mage hand"
+      // French (AideDD): "Minor spells (at will): ..."
+      const cantripMatch = desc.match(/(?:Cantrips|Minor spells)\s*\(at will\):\s*(.+)/im);
       if (cantripMatch) {
         for (const name of splitSpellList(cantripMatch[1])) {
-          spellNames.push({ name, mode: "atwill", uses: null });
+          const translated = translateFrenchSpell(name);
+          if (translated) spellNames.push({ name: translated, mode: "atwill", uses: null });
         }
       }
 
-      // "1st level (4 slots): detect magic, mage armor"
+      // English: "1st level (4 slots): detect magic, mage armor"
       const slotRe = /(\d+)(?:st|nd|rd|th) level \((\d+) slots?\):\s*(.+)/gim;
       let slotMatch;
       while ((slotMatch = slotRe.exec(desc)) !== null) {
@@ -491,7 +547,24 @@ export function parseSpellcasting(specialAbilities) {
         const slots = parseInt(slotMatch[2]);
         spellSlots[`spell${level}`] = { value: slots, max: slots };
         for (const name of splitSpellList(slotMatch[3])) {
-          spellNames.push({ name, mode: "prepared", uses: null, level });
+          const translated = translateFrenchSpell(name);
+          if (translated) spellNames.push({ name: translated, mode: "prepared", uses: null, level });
+        }
+      }
+
+      // French (AideDD): "Level 1 (4 locations): detect magic, mage armor"
+      const frSlotRe = /Level (\d+) \((\d+) locations?\):\s*(.+)/gim;
+      let frSlotMatch;
+      while ((frSlotMatch = frSlotRe.exec(desc)) !== null) {
+        const level = parseInt(frSlotMatch[1]);
+        const slots = parseInt(frSlotMatch[2]);
+        // Don't overwrite if English pattern already matched this level
+        if (!spellSlots[`spell${level}`]) {
+          spellSlots[`spell${level}`] = { value: slots, max: slots };
+        }
+        for (const name of splitSpellList(frSlotMatch[3])) {
+          const translated = translateFrenchSpell(name);
+          if (translated) spellNames.push({ name: translated, mode: "prepared", uses: null, level });
         }
       }
     }

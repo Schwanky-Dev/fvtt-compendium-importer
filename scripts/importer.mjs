@@ -149,6 +149,25 @@ async function resolveSpellItem(spellName, mode, uses, sourceEdition) {
     "freezing sphere": "otiluke's freezing sphere",
     "telepathic bond": "rary's telepathic bond",
     "sword": "mordenkainen's sword",
+    // French (AideDD) → English SRD translations
+    "conjuring": "prestidigitation",
+    "frost ray": "ray of frost",
+    "magic detection": "detect magic",
+    "magic projectile": "magic missile",
+    "thundering wave": "thunderwave",
+    "thought detection": "detect thoughts",
+    "acid arrow of melf": "melf's acid arrow",
+    "animation of the dead": "animate dead",
+    "wilting": "blight",
+    "dimensional door": "dimension door",
+    "deadly mist": "cloudkill",
+    "scrutiny": "scrying",
+    "disintegration": "disintegrate",
+    "invulnerability": "globe of invulnerability",
+    "change of plan": "plane shift",
+    "monster domination": "dominate monster",
+    "stunning power word": "power word stun",
+    "word of mortal power": "power word kill",
   };
 
   // Build pack list based on edition settings
