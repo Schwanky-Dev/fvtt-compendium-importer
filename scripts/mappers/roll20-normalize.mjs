@@ -79,6 +79,146 @@ function parseDataArray(jsonStr) {
 }
 
 /**
+ * Strip HTML tags from a string.
+ */
+function stripHtml(str) {
+  return String(str).replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Parse a content-only blob (HTML/markdown) into a flat object
+ * matching the structured Roll20 data fields.
+ * Returns an object with keys like AC, HP, STR, etc.
+ */
+function parseContentBlob(content) {
+  const text = stripHtml(content);
+  const parsed = {};
+
+  // --- Core stats ---
+  const acMatch = text.match(/Armor\s+Class[\s:*]*(\d+)\s*(?:\(([^)]+)\))?/i);
+  if (acMatch) parsed.AC = acMatch[2] ? `${acMatch[1]} (${acMatch[2].trim()})` : acMatch[1];
+
+  const hpMatch = text.match(/Hit\s+Points[\s:*]*(\d+)\s*(?:\(([^)]+)\))?/i);
+  if (hpMatch) parsed.HP = hpMatch[2] ? `${hpMatch[1]} (${hpMatch[2].trim()})` : hpMatch[1];
+
+  const speedMatch = text.match(/Speed[\s:*]*([\d].*?)(?:\*\*|$)/im);
+  if (speedMatch) parsed.Speed = speedMatch[1].replace(/\s+/g, " ").trim();
+
+  // --- Ability scores: handle "STR 11 (+0)" or "**STR**: 11 (+0)" or "**STR** 11" ---
+  for (const stat of ["STR", "DEX", "CON", "INT", "WIS", "CHA"]) {
+    const re = new RegExp(`${stat}[\\s:*]*(\\d+)`, "i");
+    const m = text.match(re);
+    if (m) parsed[stat] = m[1];
+  }
+
+  // --- Saving throws ---
+  const savesMatch = text.match(/Saving\s+Throws[\s:*]*(.+?)(?:\*\*|Skills|Damage|Condition|Senses|Languages|Challenge|$)/is);
+  if (savesMatch) parsed["Saving Throws"] = savesMatch[1].replace(/\s+/g, " ").trim().replace(/\*+/g, "");
+
+  // --- Skills ---
+  const skillsMatch = text.match(/Skills[\s:*]*(.+?)(?:\*\*|Damage|Condition|Senses|Languages|Challenge|$)/is);
+  if (skillsMatch) parsed.Skills = skillsMatch[1].replace(/\s+/g, " ").trim().replace(/\*+/g, "");
+
+  // --- Damage vulnerabilities ---
+  const vulnMatch = text.match(/Damage\s+Vulnerabilities[\s:*]*(.+?)(?:\*\*|Damage\s+Resist|Damage\s+Immun|Condition|Senses|Languages|Challenge|$)/is);
+  if (vulnMatch) parsed["Damage Vulnerabilities"] = vulnMatch[1].replace(/\s+/g, " ").trim().replace(/\*+/g, "");
+
+  // --- Damage resistances ---
+  const resMatch = text.match(/Damage\s+Resistances?[\s:*]*(.+?)(?:\*\*|Damage\s+Immun|Condition|Senses|Languages|Challenge|$)/is);
+  if (resMatch) parsed["Damage Resistances"] = resMatch[1].replace(/\s+/g, " ").trim().replace(/\*+/g, "");
+
+  // --- Damage immunities ---
+  const dimmMatch = text.match(/Damage\s+Immunities[\s:*]*(.+?)(?:\*\*|Condition|Senses|Languages|Challenge|$)/is);
+  if (dimmMatch) parsed["Damage Immunities"] = dimmMatch[1].replace(/\s+/g, " ").trim().replace(/\*+/g, "");
+
+  // --- Condition immunities ---
+  const cimmMatch = text.match(/Condition\s+Immunities[\s:*]*(.+?)(?:\*\*|Senses|Languages|Challenge|$)/is);
+  if (cimmMatch) parsed["Condition Immunities"] = cimmMatch[1].replace(/\s+/g, " ").trim().replace(/\*+/g, "");
+
+  // --- Senses ---
+  const sensesMatch = text.match(/Senses[\s:*]*(.+?)(?:\*\*|Languages|Challenge|$)/is);
+  if (sensesMatch) parsed.Senses = sensesMatch[1].replace(/\s+/g, " ").trim().replace(/\*+/g, "");
+
+  // --- Languages ---
+  const langMatch = text.match(/Languages[\s:*]*(.+?)(?:\*\*|Challenge|$)/is);
+  if (langMatch) parsed.Languages = langMatch[1].replace(/\s+/g, " ").trim().replace(/\*+/g, "");
+
+  // --- Challenge Rating ---
+  const crMatch = text.match(/Challenge[\s:*]*([\d/]+)\s*(?:\(([^)]+)\))?/i);
+  if (crMatch) parsed["Challenge Rating"] = crMatch[1].trim();
+
+  // --- Size / Type / Alignment from the subheading line ---
+  // Typically: "Medium undead, lawful evil" or "*Medium undead, lawful evil*"
+  const sizeTypeMatch = text.match(/\b(Tiny|Small|Medium|Large|Huge|Gargantuan)\b\s+(\w[\w\s]*?)(?:,\s*(.+?))?(?:\*\*|Armor\s+Class)/is);
+  if (sizeTypeMatch) {
+    parsed.Size = sizeTypeMatch[1].trim();
+    parsed.Type = sizeTypeMatch[2].trim();
+    if (sizeTypeMatch[3]) parsed.Alignment = sizeTypeMatch[3].trim().replace(/\*+/g, "");
+  }
+
+  // --- Sections: Traits, Actions, Reactions, Legendary Actions ---
+  // We extract these as JSON arrays of {Name, Desc} to match the data-* format
+  const extractSection = (startPattern, endPatterns) => {
+    const startRe = new RegExp(startPattern, "i");
+    const startIdx = text.search(startRe);
+    if (startIdx === -1) return null;
+    const afterStart = text.slice(startIdx).replace(startRe, "").trim();
+
+    let endIdx = afterStart.length;
+    for (const ep of endPatterns) {
+      const eRe = new RegExp(ep, "i");
+      const eIdx = afterStart.search(eRe);
+      if (eIdx !== -1 && eIdx < endIdx) endIdx = eIdx;
+    }
+    return afterStart.slice(0, endIdx).trim();
+  };
+
+  const parseEntries = (sectionText) => {
+    if (!sectionText) return [];
+    const entries = [];
+    // Match bold entry names: "**Name.** Desc" or "**Name:** Desc" or "***Name.*** Desc"
+    const parts = sectionText.split(/\*{2,3}([^*]+?)[.:]?\*{2,3}\s*/);
+    // parts[0] is before first entry (usually empty), then alternating name, desc
+    for (let i = 1; i < parts.length; i += 2) {
+      const entryName = parts[i]?.trim();
+      const entryDesc = (parts[i + 1] || "").trim();
+      if (entryName) entries.push({ Name: entryName, Desc: entryDesc });
+    }
+    return entries;
+  };
+
+  // Traits: between CR line and "Actions" heading
+  const traitsText = extractSection(
+    "Challenge[\\s:*]*[\\d/]+\\s*(?:\\([^)]*\\))?\\s*",
+    ["#{1,3}\\s*Actions", "\\*{2,3}Actions\\*{2,3}"]
+  );
+  if (traitsText) parsed["data-Traits"] = JSON.stringify(parseEntries(traitsText));
+
+  // Actions
+  const actionsText = extractSection(
+    "(?:#{1,3}\\s*|\\*{2,3})Actions\\*{0,3}\\s*",
+    ["#{1,3}\\s*Reactions", "\\*{2,3}Reactions\\*{2,3}", "#{1,3}\\s*Legendary\\s+Actions", "\\*{2,3}Legendary\\s+Actions\\*{2,3}"]
+  );
+  if (actionsText) parsed["data-Actions"] = JSON.stringify(parseEntries(actionsText));
+
+  // Reactions
+  const reactionsText = extractSection(
+    "(?:#{1,3}\\s*|\\*{2,3})Reactions\\*{0,3}\\s*",
+    ["#{1,3}\\s*Legendary\\s+Actions", "\\*{2,3}Legendary\\s+Actions\\*{2,3}"]
+  );
+  if (reactionsText) parsed["data-Reactions"] = JSON.stringify(parseEntries(reactionsText));
+
+  // Legendary Actions
+  const legendaryText = extractSection(
+    "(?:#{1,3}\\s*|\\*{2,3})Legendary\\s+Actions\\*{0,3}\\s*",
+    ["#{1,3}\\s*Lair\\s+Actions", "\\*{2,3}Lair\\s+Actions\\*{2,3}"]
+  );
+  if (legendaryText) parsed["data-Legendary-Actions"] = JSON.stringify(parseEntries(legendaryText));
+
+  return parsed;
+}
+
+/**
  * Parse saving throws string: "Dex +5, Wis +3" → { dexterity: 5, wisdom: 3 }
  */
 function parseSaves(str) {
@@ -102,7 +242,15 @@ function parseSaves(str) {
 export function normalizeRoll20Monster(raw) {
   // Roll20 response wraps stats under .data — detect by Category OR known stat fields
   const hasDataObj = raw?.data && typeof raw.data === "object";
-  const d = hasDataObj && (raw.data.Category || raw.data.STR || raw.data.HP) ? raw.data : raw;
+  let d = hasDataObj && (raw.data.Category || raw.data.STR || raw.data.HP) ? raw.data : raw;
+
+  // Fallback: if no structured stats but content blob exists, parse it
+  if (!d.HP && !d.STR && raw?.content) {
+    const contentParsed = parseContentBlob(raw.content);
+    // Merge parsed content as the data source, keeping any existing fields from d
+    d = { ...contentParsed, ...Object.fromEntries(Object.entries(d).filter(([, v]) => v != null && v !== "")) };
+  }
+
   const name = d.Name || raw?.name || "Unknown";
 
   const { ac, armor_desc } = parseAC(d.AC);
@@ -171,7 +319,35 @@ export function normalizeRoll20Monster(raw) {
  */
 export function normalizeRoll20Spell(raw) {
   const hasDataObj = raw?.data && typeof raw.data === "object";
-  const d = hasDataObj && (raw.data.Category || raw.data.Level || raw.data.School) ? raw.data : raw;
+  let d = hasDataObj && (raw.data.Category || raw.data.Level || raw.data.School) ? raw.data : raw;
+
+  // Fallback: if no structured spell fields but content blob exists, parse basic fields
+  if (!d.Level && !d.School && raw?.content) {
+    const text = stripHtml(raw.content);
+    const parsed = {};
+    const levelMatch = text.match(/(\d+)\w{0,2}[-\s]*level\s+(\w+)/i) || text.match(/(cantrip)\s+(\w+)/i) || text.match(/(\w+)\s+cantrip/i);
+    if (levelMatch) {
+      if (levelMatch[1].toLowerCase() === "cantrip" || levelMatch[2]?.toLowerCase() === "cantrip") {
+        parsed.Level = "0";
+        parsed.School = (levelMatch[1].toLowerCase() === "cantrip" ? levelMatch[2] : levelMatch[1]) || "";
+      } else {
+        parsed.Level = levelMatch[1];
+        parsed.School = levelMatch[2] || "";
+      }
+    }
+    const ctMatch = text.match(/Casting\s+Time[\s:*]*(.+?)(?:\*\*|Range|$)/is);
+    if (ctMatch) parsed["Casting Time"] = ctMatch[1].trim().replace(/\*+/g, "");
+    const rangeMatch = text.match(/Range[\s:*]*(.+?)(?:\*\*|Components|$)/is);
+    if (rangeMatch) parsed.Range = rangeMatch[1].trim().replace(/\*+/g, "");
+    const compMatch = text.match(/Components[\s:*]*(.+?)(?:\*\*|Duration|$)/is);
+    if (compMatch) parsed.Components = compMatch[1].trim().replace(/\*+/g, "");
+    const durMatch = text.match(/Duration[\s:*]*(.+?)(?:\*\*|$)/im);
+    if (durMatch) parsed.Duration = durMatch[1].trim().replace(/\*+/g, "");
+    const ritMatch = text.match(/\britual\b/i);
+    if (ritMatch) parsed["filter-Ritual"] = "yes";
+    d = { ...parsed, ...Object.fromEntries(Object.entries(d).filter(([, v]) => v != null && v !== "")) };
+  }
+
   const name = d.Name || raw?.name || "Unknown";
 
   // Parse components string "V S M" into boolean fields
