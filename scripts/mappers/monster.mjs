@@ -303,6 +303,27 @@ function parseAoETarget(desc) {
 }
 
 /**
+ * Generate a random ID for Activities.
+ * Uses Foundry's built-in generator when available.
+ */
+function _genActivityId() {
+  if (typeof foundry !== "undefined" && foundry.utils?.randomID) return foundry.utils.randomID();
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let id = "";
+  for (let i = 0; i < 16; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
+  return id;
+}
+
+/**
+ * Parse a dice formula like "4d6+2" into Activity damage format.
+ */
+function _parseDiceFormula(formula) {
+  const m = formula.match(/^(\d+)d(\d+)(?:\s*([+-]\s*\d+))?$/);
+  if (!m) return null;
+  return { number: parseInt(m[1]), denomination: parseInt(m[2]), bonus: (m[3] || "").replace(/\s/g, "") };
+}
+
+/**
  * Build a fully-populated action item for a monster.
  *
  * STRATEGY: Set ONLY legacy fields (actionType, damage.parts, attack, etc.)
@@ -394,8 +415,53 @@ function buildActionItem(action, type = "natural") {
     if (aoe) item.system.target = aoe;
   }
 
-  // DO NOT set system.activities — let dnd5e auto-migration create them
-  // from the legacy fields above. This ensures correct schema for any dnd5e version.
+  // Build Activities for dnd5e v3+ — Activities populate ROLL and FORMULA columns.
+  // Legacy fields above are kept for backward compatibility.
+  if (actionType) {
+    const actId = _genActivityId();
+    const activityBase = {
+      _id: actId,
+      activation: {
+        type: item.system.activation.type,
+        value: item.system.activation.cost || 1,
+      },
+    };
+
+    // Convert legacy damage [formula, type] pairs to Activity damage format
+    const actDmgParts = (item.system.damage?.parts || []).map(([formula, dmgType]) => {
+      const parsed = _parseDiceFormula(formula);
+      if (parsed) {
+        return { number: parsed.number, denomination: parsed.denomination, bonus: parsed.bonus, types: [dmgType] };
+      }
+      return { custom: { enabled: true, formula }, types: [dmgType] };
+    });
+
+    if (isSave && item.system.save) {
+      // Save Activity — shows DC in ROLL column, damage in FORMULA
+      activityBase.type = "save";
+      activityBase.save = {
+        ability: [item.system.save.ability],
+        dc: { calculation: "flat", formula: String(item.system.save.dc) },
+      };
+      if (actDmgParts.length) activityBase.damage = { parts: actDmgParts };
+    } else if (isWeaponAttack || actionType === "msak" || actionType === "rsak") {
+      // Attack Activity — shows attack bonus in ROLL, damage in FORMULA
+      const isMelee = actionType === "mwak" || actionType === "msak";
+      const isSpell = actionType === "msak" || actionType === "rsak";
+      activityBase.type = "attack";
+      activityBase.attack = {
+        ability: "",
+        bonus: item.system.attack?.bonus || "",
+        flat: !!item.system.attack?.bonus,
+        type: { value: isMelee ? "melee" : "ranged", classification: isSpell ? "spell" : "weapon" },
+      };
+      if (actDmgParts.length) activityBase.damage = { parts: actDmgParts };
+    }
+
+    if (activityBase.type) {
+      item.system.activities = { [actId]: activityBase };
+    }
+  }
 
   return item;
 }
@@ -551,7 +617,7 @@ export function parseSpellcasting(specialAbilities) {
       while ((slotMatch = slotRe.exec(desc)) !== null) {
         const level = parseInt(slotMatch[1]);
         const slots = parseInt(slotMatch[2]);
-        spellSlots[`spell${level}`] = { value: slots, max: slots };
+        spellSlots[`spell${level}`] = { value: slots, max: slots, override: slots };
         for (const name of splitSpellList(slotMatch[3])) {
           const translated = translateFrenchSpell(name);
           if (translated) spellNames.push({ name: translated, mode: "prepared", uses: null, level });
@@ -566,7 +632,7 @@ export function parseSpellcasting(specialAbilities) {
         const slots = parseInt(frSlotMatch[2]);
         // Don't overwrite if English pattern already matched this level
         if (!spellSlots[`spell${level}`]) {
-          spellSlots[`spell${level}`] = { value: slots, max: slots };
+          spellSlots[`spell${level}`] = { value: slots, max: slots, override: slots };
         }
         for (const name of splitSpellList(frSlotMatch[3])) {
           const translated = translateFrenchSpell(name);

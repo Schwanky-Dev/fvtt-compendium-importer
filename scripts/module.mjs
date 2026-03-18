@@ -64,6 +64,15 @@ Hooks.once("init", () => {
     default: false,
   });
 
+  game.settings.register(MODULE_ID, "enableInternal", {
+    name: "Enable Internal Compendiums",
+    hint: "Search your Foundry compendiums (system + module packs). Fastest import — no network needed.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
   game.settings.register(MODULE_ID, "sourceFilter", {
     name: "COMPIMPORTER.Settings.SourceFilter",
     hint: "COMPIMPORTER.Settings.SourceFilterHint",
@@ -143,9 +152,9 @@ Hooks.once("init", () => {
     config: false,
     type: String,
     default: JSON.stringify({
-      quick: ["open5e"],
-      standard: ["open5e", "aidedd", "roll20"],
-      deep: ["open5e", "aidedd", "roll20", "ddb", "wikidot"],
+      quick: ["internal", "open5e"],
+      standard: ["internal", "open5e", "aidedd", "roll20"],
+      deep: ["internal", "open5e", "aidedd", "roll20", "ddb", "wikidot"],
     }),
   });
 

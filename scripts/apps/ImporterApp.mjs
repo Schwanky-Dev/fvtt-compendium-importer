@@ -3,6 +3,7 @@
  * Search → Results with import buttons. That's it.
  */
 
+import { InternalScraper } from "../scrapers/internal.mjs";
 import { Open5eScraper } from "../scrapers/open5e.mjs";
 import { DDBScraper } from "../scrapers/ddb.mjs";
 import { Roll20Scraper } from "../scrapers/roll20.mjs";
@@ -60,7 +61,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   constructor(options = {}) {
     super(options);
-    this.#scrapers = [new Open5eScraper(), new AideDDScraper(), new WikidotScraper(), new DDBScraper(), new Roll20Scraper()];
+    this.#scrapers = [new InternalScraper(), new Open5eScraper(), new AideDDScraper(), new WikidotScraper(), new DDBScraper(), new Roll20Scraper()];
     try {
       this.#searchPass = game.settings.get("fvtt-compendium-importer", "defaultSearchPass");
     } catch { /* use default */ }

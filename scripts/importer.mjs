@@ -93,6 +93,24 @@ export async function importResult(result, importType, scraper) {
 
   if (!data) throw new Error("No data available for import");
 
+  // Internal results — import directly from the Foundry compendium pack
+  if (result.source === "internal" && result._packId && result._entryId) {
+    const pack = game.packs.get(result._packId);
+    if (!pack) throw new Error(`Pack ${result._packId} not found`);
+    const doc = await pack.getDocument(result._entryId);
+    const docData = doc.toObject();
+    delete docData._id;
+    // Remove pack reference so it creates a world-level document
+    delete docData._stats;
+    if (pack.documentName === "Actor") {
+      const actor = await Actor.create(docData);
+      return actor;
+    } else {
+      const item = await Item.create(docData);
+      return item;
+    }
+  }
+
   // DDB results have no parseable stats — always create a Journal Entry
   if (result.source === "ddb") {
     return importAsJournal(result, { name: result.name, _ddbUrl: result.url });
@@ -280,6 +298,10 @@ async function downloadAndUploadImage(url, filename) {
     if (!response.ok) return null;
     const blob = await response.blob();
     const file = new File([blob], filename, { type: blob.type || "image/png" });
+    // Ensure upload directory exists
+    try { await FilePicker.browse("data", "compendomize-images"); } catch {
+      await FilePicker.createDirectory("data", "compendomize-images");
+    }
     const result = await FilePicker.upload("data", "compendomize-images", file);
     return result?.path || null;
   } catch (err) {
@@ -319,6 +341,15 @@ async function importAsActor(result, data) {
   const actor = await Actor.create(actorData);
   if (!actor) {
     throw new Error(`Failed to create Actor "${actorData.name}". Check the console for validation errors.`);
+  }
+
+  // Add import source attribution so users can tell Roll20 vs AideDD vs Open5e imports apart
+  if (result.sourceLabel && actorData.system?.details?.source?.custom) {
+    const existingSource = actor.system?.details?.source?.custom || "Compendomize";
+    // Only append if not already attributed
+    if (!existingSource.includes("via ")) {
+      await actor.update({ "system.details.source.custom": `${existingSource} (via ${result.sourceLabel})` });
+    }
   }
 
   // Create embedded items (actions, features, etc.)

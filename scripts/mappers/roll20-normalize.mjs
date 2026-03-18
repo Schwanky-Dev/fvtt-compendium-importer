@@ -281,6 +281,15 @@ export function normalizeRoll20Monster(raw) {
   const hasDataObj = raw?.data && typeof raw.data === "object";
   let d = hasDataObj && (raw.data.Category || raw.data.STR || raw.data.HP) ? raw.data : raw;
 
+  // Extract token/portrait image from content HTML before it gets stripped
+  let contentImg = null;
+  if (raw?.content) {
+    const imgMatch = raw.content.match(/<img[^>]*class="tokendisplay"[^>]*src="([^"]+)"[^>]*>/i)
+      || raw.content.match(/<img[^>]*src="([^"]+)"[^>]*class="tokendisplay"[^>]*>/i)
+      || raw.content.match(/<img[^>]*src="(https:\/\/files\.d20\.io\/images\/[^"]+)"[^>]*>/i);
+    if (imgMatch) contentImg = imgMatch[1];
+  }
+
   // Fallback: if no structured stats but content blob exists, parse it
   if (!d.HP && !d.STR && raw?.content) {
     const contentParsed = parseContentBlob(raw.content);
@@ -339,8 +348,8 @@ export function normalizeRoll20Monster(raw) {
     reactions: parseDataArray(d["data-Reactions"]),
     legendary_actions: parseDataArray(d["data-Legendary-Actions"]),
     special_abilities: parseDataArray(d["data-Traits"]),
-    // Token art
-    img_main: d.Token || d.avatar || null,
+    // Token art — check structured data first, then content blob <img> extraction
+    img_main: d.Token || d.avatar || contentImg || null,
     // Preserve source info
     document__license_url: "",
     document__title: d.Source || "Roll20",
