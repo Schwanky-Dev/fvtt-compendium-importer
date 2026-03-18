@@ -125,7 +125,7 @@ const ICON_MAP = {
   shortsword: "icons/weapons/swords/shortsword-guard-worn.webp",
   longsword: "icons/weapons/swords/longsword-guard-broad.webp",
   greatsword: "icons/weapons/swords/greatsword-crossguard-steel.webp",
-  scimitar: "icons/weapons/swords/scimitar-worn.webp",
+  scimitar: "icons/weapons/swords/sword-guard-bronze.webp",
   dagger: "icons/weapons/daggers/dagger-broad-bronze.webp",
   greataxe: "icons/weapons/axes/axe-broad-brown.webp",
   handaxe: "icons/weapons/axes/hatchet-broad-brown.webp",
