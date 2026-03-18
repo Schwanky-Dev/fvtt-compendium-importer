@@ -317,7 +317,7 @@ function mapWeapon(data) {
     type: "weapon",
     system: {
       description: { value: `<p>${data.desc ?? data.name}</p>` },
-      source: { custom: data.document__title ?? "Open5e SRD" },
+      source: { custom: data.document__title || data.source || "Compendomize" },
       quantity: 1,
       weight: { value: parseFloat(data.weight) || 0, units: "lb" },
       price: { value: parseGP(data.cost), denomination: "gp" },
@@ -355,7 +355,7 @@ function mapArmor(data) {
     type: "equipment",
     system: {
       description: { value: `<p>${data.desc ?? data.name}</p>` },
-      source: { custom: data.document__title ?? "Open5e SRD" },
+      source: { custom: data.document__title || data.source || "Compendomize" },
       quantity: 1,
       weight: { value: parseFloat(data.weight) || 0, units: "lb" },
       price: { value: parseGP(data.cost), denomination: "gp" },
@@ -396,7 +396,7 @@ function mapMagicItem(data) {
     type: foundryType,
     system: {
       description: { value: descHtml },
-      source: { custom: data.document__title ?? data.document__slug ?? "Open5e SRD" },
+      source: { custom: data.document__title || data.source || "Compendomize" },
       quantity: 1,
       weight: { value: 0, units: "lb" },
       rarity,

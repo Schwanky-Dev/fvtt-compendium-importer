@@ -131,6 +131,8 @@ export class WikidotScraper extends BaseScraper {
       name,
       slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       source: "wikidot",
+      // Set document__title so monster mapper picks up the correct source attribution
+      document__title: "Wikidot (SRD)",
     };
 
     // Size/type/alignment — first <em> or <p> with pattern "Medium humanoid, neutral evil"
@@ -229,6 +231,7 @@ export class WikidotScraper extends BaseScraper {
       name,
       slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       source: "wikidot",
+      document__title: "Wikidot (SRD)",
     };
 
     // Level and school — e.g. "3rd-level evocation" or "Evocation cantrip"
@@ -308,6 +311,7 @@ export class WikidotScraper extends BaseScraper {
       name,
       slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       source: "wikidot",
+      document__title: "Wikidot (SRD)",
       type: type === "weapon" ? "Weapon" : type === "armor" ? "Armor" : "Wondrous item",
     };
 

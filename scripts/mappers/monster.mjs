@@ -106,9 +106,13 @@ function resolveIcon(preferredPath, ...fallbacks) {
   return DEFAULT_ICON;
 }
 
-/** All paths below MUST start with "icons/" (Foundry core). */
+/**
+ * All paths below MUST start with "icons/" (Foundry core).
+ * Paths are based on game-icons.net naming convention used by Foundry V10+.
+ * Some icons were renamed/reorganized in V12 — use the most stable paths.
+ */
 const ICON_MAP = {
-  bite: "icons/skills/melee/mouth-bite-fangs-red.webp",
+  bite: "icons/creatures/abilities/mouth-teeth-rows-red.webp",
   claw: "icons/skills/melee/strike-claw-red.webp",
   claws: "icons/skills/melee/strike-claw-red.webp",
   tail: "icons/skills/melee/strike-chain-yellow.webp",
@@ -209,6 +213,8 @@ function parseActionType(desc) {
   if (/Melee or Ranged Weapon Attack/i.test(desc)) return "mwak";
   if (/Melee Weapon Attack/i.test(desc)) return "mwak";
   if (/Ranged Weapon Attack/i.test(desc)) return "rwak";
+  // Handle "Melee or Ranged Spell Attack" (e.g. some homebrew/variant stat blocks)
+  if (/Melee or Ranged Spell Attack/i.test(desc)) return "msak";
   if (/Melee Spell Attack/i.test(desc)) return "msak";
   if (/Ranged Spell Attack/i.test(desc)) return "rsak";
   if (/DC\s*\d+\s*\w+\s*saving throw/i.test(desc)) return "save";
@@ -713,7 +719,9 @@ export function mapMonster(data) {
           subtype: data.subtype ?? "",
         },
         alignment: ALIGNMENT_MAP[(data.alignment ?? "").toLowerCase()] ?? "",
-        source: { custom: data.document__slug ?? "Open5e SRD" },
+        // Use human-readable source title, not URL slug. Falls back through
+        // document__title (Open5e/Roll20/AideDD), source (Wikidot), then generic.
+        source: { custom: data.document__title || data.source || "Compendomize" },
       },
       traits: {
         size: SIZE_MAP[data.size] ?? "med",

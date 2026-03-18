@@ -43,6 +43,8 @@ function parseSpeed(str) {
     speed[type] = parseInt(m[2], 10);
   }
   if (Object.keys(speed).length === 0) speed.walk = 0;
+  // Detect "(hover)" in speed string — used by monster mapper's parseSpeed()
+  if (/\(hover\)/i.test(str)) speed.hover = true;
   return speed;
 }
 
@@ -80,9 +82,24 @@ function parseDataArray(jsonStr) {
 
 /**
  * Strip HTML tags from a string.
+ * Converts <strong>/<b>/<em> to markdown equivalents BEFORE stripping other tags,
+ * so parseEntries() can still detect bold entry names in HTML content blobs.
  */
 function stripHtml(str) {
-  return String(str).replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/\s+/g, " ").trim();
+  return String(str)
+    .replace(/<\/?br\s*\/?>/gi, "\n")               // Preserve line breaks as newlines
+    .replace(/<strong>(.*?)<\/strong>/gi, "**$1**")   // <strong> → **bold**
+    .replace(/<b>(.*?)<\/b>/gi, "**$1**")             // <b> → **bold**
+    .replace(/<em>(.*?)<\/em>/gi, "*$1*")             // <em> → *italic*
+    .replace(/<li>(.*?)<\/li>/gi, "• $1\n")           // <li> → bullet
+    .replace(/<[^>]*>/g, " ")                         // Strip remaining tags
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/[ \t]+/g, " ")                          // Collapse horizontal whitespace only
+    .replace(/\n /g, "\n")                            // Clean up space after newlines
+    .trim();
 }
 
 /**
@@ -176,42 +193,62 @@ function parseContentBlob(content) {
   const parseEntries = (sectionText) => {
     if (!sectionText) return [];
     const entries = [];
-    // Match bold entry names: "**Name.** Desc" or "**Name:** Desc" or "***Name.*** Desc"
+
+    // Strategy 1: Match bold entry names: "**Name.** Desc" or "**Name:** Desc"
     const parts = sectionText.split(/\*{2,3}([^*]+?)[.:]?\*{2,3}\s*/);
-    // parts[0] is before first entry (usually empty), then alternating name, desc
-    for (let i = 1; i < parts.length; i += 2) {
-      const entryName = parts[i]?.trim();
-      const entryDesc = (parts[i + 1] || "").trim();
-      if (entryName) entries.push({ Name: entryName, Desc: entryDesc });
+    if (parts.length > 1) {
+      // parts[0] is before first entry (usually empty), then alternating name, desc
+      for (let i = 1; i < parts.length; i += 2) {
+        const entryName = parts[i]?.trim();
+        const entryDesc = (parts[i + 1] || "").trim();
+        if (entryName) entries.push({ Name: entryName, Desc: entryDesc });
+      }
     }
+
+    // Strategy 2: If no markdown bold found, try "Name. Description" or "Name: Description"
+    // patterns on newline-separated text (common in plain-text content blobs).
+    if (entries.length === 0) {
+      const lines = sectionText.split(/\n/).map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        // "Legendary Resistance (3/Day). If the lich fails..."
+        // "Paralyzing Touch. Melee Spell Attack: +12 to hit..."
+        const m = line.match(/^([A-Z][\w\s()'/,-]+?)[.:]\s+(.+)/);
+        if (m && m[1].length < 80) {
+          entries.push({ Name: m[1].trim(), Desc: m[2].trim() });
+        }
+      }
+    }
+
     return entries;
   };
 
   // Traits: between CR line and "Actions" heading
+  // Match bare "Actions" text too (plain-text content blobs without markdown markers)
   const traitsText = extractSection(
     "Challenge[\\s:*]*[\\d/]+\\s*(?:\\([^)]*\\))?\\s*",
-    ["#{1,3}\\s*Actions", "\\*{2,3}Actions\\*{2,3}"]
+    ["#{1,3}\\s*Actions", "\\*{2,3}Actions\\*{2,3}", "\\nActions\\s*\\n"]
   );
   if (traitsText) parsed["data-Traits"] = JSON.stringify(parseEntries(traitsText));
 
-  // Actions
+  // Actions — match markdown, HTML-converted, or bare text "Actions" headers
   const actionsText = extractSection(
-    "(?:#{1,3}\\s*|\\*{2,3})Actions\\*{0,3}\\s*",
-    ["#{1,3}\\s*Reactions", "\\*{2,3}Reactions\\*{2,3}", "#{1,3}\\s*Legendary\\s+Actions", "\\*{2,3}Legendary\\s+Actions\\*{2,3}"]
+    "(?:#{1,3}\\s*|\\*{2,3})?Actions\\*{0,3}\\s*",
+    ["#{1,3}\\s*Reactions", "\\*{2,3}Reactions\\*{2,3}", "\\nReactions\\s*\\n",
+     "#{1,3}\\s*Legendary\\s+Actions", "\\*{2,3}Legendary\\s+Actions\\*{2,3}", "\\nLegendary\\s+Actions\\s*\\n"]
   );
   if (actionsText) parsed["data-Actions"] = JSON.stringify(parseEntries(actionsText));
 
   // Reactions
   const reactionsText = extractSection(
-    "(?:#{1,3}\\s*|\\*{2,3})Reactions\\*{0,3}\\s*",
-    ["#{1,3}\\s*Legendary\\s+Actions", "\\*{2,3}Legendary\\s+Actions\\*{2,3}"]
+    "(?:#{1,3}\\s*|\\*{2,3})?Reactions\\*{0,3}\\s*",
+    ["#{1,3}\\s*Legendary\\s+Actions", "\\*{2,3}Legendary\\s+Actions\\*{2,3}", "\\nLegendary\\s+Actions\\s*\\n"]
   );
   if (reactionsText) parsed["data-Reactions"] = JSON.stringify(parseEntries(reactionsText));
 
   // Legendary Actions
   const legendaryText = extractSection(
-    "(?:#{1,3}\\s*|\\*{2,3})Legendary\\s+Actions\\*{0,3}\\s*",
-    ["#{1,3}\\s*Lair\\s+Actions", "\\*{2,3}Lair\\s+Actions\\*{2,3}"]
+    "(?:#{1,3}\\s*|\\*{2,3})?Legendary\\s+Actions\\*{0,3}\\s*",
+    ["#{1,3}\\s*Lair\\s+Actions", "\\*{2,3}Lair\\s+Actions\\*{2,3}", "\\nLair\\s+Actions\\s*\\n"]
   );
   if (legendaryText) parsed["data-Legendary-Actions"] = JSON.stringify(parseEntries(legendaryText));
 

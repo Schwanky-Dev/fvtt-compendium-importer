@@ -195,8 +195,10 @@ export function mapSpell(data) {
       description: {
         value: formatDescription(data),
       },
-      source: { custom: data.document__slug ?? "Open5e SRD" },
-      level: { value: level },
+      // Use human-readable source title, not URL slug
+      source: { custom: data.document__title || data.source || "Compendomize" },
+      // dnd5e v3+ expects level as a plain integer, not {value: N}
+      level,
       school: { value: school },
       activation,
       duration,
