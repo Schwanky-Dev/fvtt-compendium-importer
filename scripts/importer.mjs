@@ -69,7 +69,8 @@ export function generatePreview(result) {
 
   const { preview } = getMapper(result);
   try {
-    return preview(data);
+    const sourceBanner = `<p><strong>Source:</strong> ${escapeHtml(result.sourceLabel || result.source)}</p>`;
+    return sourceBanner + preview(data);
   } catch (err) {
     console.error(`${MODULE_ID} | Preview generation failed:`, err);
     return `<div class="ci-stat-block"><h2>${escapeHtml(result.name)}</h2><p>Preview generation failed: ${escapeHtml(err.message)}</p></div>`;
@@ -430,11 +431,16 @@ async function importAsItem(result, data) {
  */
 async function importAsJournal(result, data) {
   let previewHTML = generatePreview(result);
-  // For DDB results, include a direct link in the journal page
-  if (data._ddbUrl) {
-    previewHTML = `<h2>${escapeHtml(data.name ?? result.name)}</h2>` +
-      `<p>Imported from <strong>D&amp;D Beyond</strong>.</p>` +
-      `<p><a href="${escapeHtml(data._ddbUrl)}" target="_blank" rel="noopener">View on D&amp;D Beyond</a></p>`;
+  // For DDB results, include a prominent link and guidance in the journal page
+  if (data._ddbUrl || result.source === "ddb") {
+    const ddbUrl = escapeHtml(data._ddbUrl || result.url || "#");
+    const entryName = escapeHtml(data.name ?? result.name);
+    previewHTML = `<h2>${entryName}</h2>` +
+      `<p><strong>⚠ D&amp;D Beyond — Link Only</strong></p>` +
+      `<p>D&amp;D Beyond pages use dynamic rendering, so stat block data could not be extracted.</p>` +
+      `<p><strong>D&amp;D Beyond URL:</strong><br/><a href="${ddbUrl}" target="_blank" rel="noopener">${ddbUrl}</a></p>` +
+      `<hr/>` +
+      `<p><em>Tip: For importable stat blocks with full data, search again and use an <strong>Open5e</strong> or <strong>Roll20</strong> result instead.</em></p>`;
   }
   const journalData = {
     name: data.name ?? result.name,

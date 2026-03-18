@@ -10,7 +10,7 @@ const DDB_BASE = "https://www.dndbeyond.com";
 export class DDBScraper extends BaseScraper {
   static id = "ddb";
   static label = "D&D Beyond";
-  static color = "#C53131";
+  static color = "#4A90D9";
   static requiresProxy = true;
 
   isEnabled() {

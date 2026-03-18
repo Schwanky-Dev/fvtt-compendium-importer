@@ -269,6 +269,19 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         assignTier(r);
       }
 
+      // Sort parseable sources before link-only sources (DDB)
+      // Within each group, preserve existing order (exact match first, then alpha)
+      const PARSEABLE_SOURCES = new Set(["open5e", "roll20", "wikidot", "aidedd"]);
+      this.#results.sort((a, b) => {
+        const aExact = a.name.toLowerCase() === lowerQuery ? 0 : 1;
+        const bExact = b.name.toLowerCase() === lowerQuery ? 0 : 1;
+        if (aExact !== bExact) return aExact - bExact;
+        const aParseable = PARSEABLE_SOURCES.has(a.source) ? 0 : 1;
+        const bParseable = PARSEABLE_SOURCES.has(b.source) ? 0 : 1;
+        if (aParseable !== bParseable) return aParseable - bParseable;
+        return a.name.localeCompare(b.name);
+      });
+
       // Apply source filter
       const sourceFilter = game.settings.get(MODULE_ID, "sourceFilter");
       if (sourceFilter === "official") {
