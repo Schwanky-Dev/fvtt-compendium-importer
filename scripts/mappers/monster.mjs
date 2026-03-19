@@ -760,9 +760,20 @@ export function parseSpellcasting(specialAbilities) {
     }
   }
 
-  if (spellNames.length === 0) return null;
+  // Deduplicate spell names. Roll20 and some other sources may produce the same
+  // spell entry twice (e.g. from both a structured Traits field AND a parsed
+  // content blob). Key on name+mode so innate/prepared variants stay distinct.
+  const seenSpellKeys = new Set();
+  const dedupedSpellNames = spellNames.filter(({ name, mode }) => {
+    const key = `${name.toLowerCase()}::${mode}`;
+    if (seenSpellKeys.has(key)) return false;
+    seenSpellKeys.add(key);
+    return true;
+  });
 
-  return { spellcastingAbility, spellDC, spellAttackBonus, spellSlots, spellNames };
+  if (dedupedSpellNames.length === 0) return null;
+
+  return { spellcastingAbility, spellDC, spellAttackBonus, spellSlots, spellNames: dedupedSpellNames };
 }
 
 /**

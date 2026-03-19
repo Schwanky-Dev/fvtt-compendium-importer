@@ -207,7 +207,16 @@ export class AideDDScraper extends BaseScraper {
   }
 
   /**
-   * Parse entries (traits) before the first "rub" div (Actions heading).
+   * Parse entries (traits) before the first "rub" div section heading.
+   *
+   * FIX: The previous implementation checked `p.previousElementSibling` for a
+   * `.rub` div — this only fires for the FIRST <p> after each heading.
+   * Subsequent <p> elements have a <p> (not .rub) as their prev sibling, so the
+   * section-boundary check never fired and ALL paragraphs from ALL sections were
+   * collected into special_abilities (legendary actions became features, etc.).
+   *
+   * New approach: gather all .rub headings and <p> elements, sort them by DOM
+   * position, then walk in order — tracking which section we're in explicitly.
    *
    * For Spellcasting / Innate Spellcasting abilities, AideDD renders the
    * spell-list lines as bare text nodes and inline elements (<em>, <a>, <br>)
@@ -216,35 +225,52 @@ export class AideDDScraper extends BaseScraper {
    */
   _parseSectionEntries(doc, afterSection, beforeSection) {
     const entries = [];
-    const paragraphs = doc.querySelectorAll("p");
-    let inSection = afterSection === null; // if null, start from beginning
 
-    for (const p of paragraphs) {
-      // Check if we've hit a rub div before this paragraph
-      const prevSib = p.previousElementSibling;
-      if (prevSib?.classList?.contains("rub")) {
-        const rubText = prevSib.textContent.trim();
+    // Gather all section headings and paragraphs, then sort by DOM position so
+    // we process them in document order (querySelectorAll order is generally
+    // stable, but mixing two node types can diverge).
+    const rubs = Array.from(doc.querySelectorAll(".rub"));
+    const paragraphs = Array.from(doc.querySelectorAll("p"));
+
+    const allNodes = [...rubs, ...paragraphs].sort((a, b) => {
+      // compareDocumentPosition bit 4 = FOLLOWING (b is after a → a is earlier)
+      const pos = a.compareDocumentPosition(b);
+      if (pos & 4) return -1; // DOCUMENT_POSITION_FOLLOWING
+      if (pos & 2) return 1;  // DOCUMENT_POSITION_PRECEDING
+      return 0;
+    });
+
+    let inSection = afterSection === null; // null = collect from the very start
+
+    for (const node of allNodes) {
+      if (node.classList?.contains("rub")) {
+        const rubText = node.textContent.trim();
         if (afterSection && rubText === afterSection) {
           inSection = true;
           continue;
         }
-        if (beforeSection && rubText === beforeSection) break;
-        if (inSection) break; // Hit next section
+        if (inSection) {
+          // Any section heading encountered while collecting = stop.
+          // This correctly terminates at "Actions", "Legendary Actions", etc.
+          break;
+        }
+        continue;
       }
 
       if (!inSection) continue;
+      if (node.tagName !== "P") continue;
 
-      const strong = p.querySelector("strong");
-      const em = p.querySelector("em");
+      const strong = node.querySelector("strong");
+      const em = node.querySelector("em");
       if (strong && em) {
         const name = (strong.textContent || em.textContent).trim().replace(/\.\s*$/, "");
-        let desc = p.textContent.replace(name, "").replace(/^\.\s*/, "").trim();
+        let desc = node.textContent.replace(name, "").replace(/^\.\s*/, "").trim();
 
         // For spellcasting abilities, collect continuation content from DOM
         // siblings that follow this <p> (bare text nodes, <em>, <a>, <br>)
         // until the next <p> or <div class="rub">.
         if (/^(Innate )?Spellcasting$/i.test(name)) {
-          const continuationLines = this._collectContinuationText(p);
+          const continuationLines = this._collectContinuationText(node);
           if (continuationLines) {
             desc = desc + "\n" + continuationLines;
           }
