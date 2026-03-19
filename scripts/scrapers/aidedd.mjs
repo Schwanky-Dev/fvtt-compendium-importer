@@ -189,6 +189,9 @@ export class AideDDScraper extends BaseScraper {
     data.actions = this._parseSectionAfterRub(doc, "Actions");
     data.reactions = this._parseSectionAfterRub(doc, "Reactions");
     data.legendary_actions = this._parseSectionAfterRub(doc, "Legendary Actions");
+    data.legendary_desc = this._parseSectionIntro(doc, "Legendary Actions");
+    data.lair_actions = this._parseSectionAfterRub(doc, "Lair Actions");
+    data.lair_desc = this._parseSectionIntro(doc, "Lair Actions");
 
     // Build search result
     return {
@@ -348,6 +351,42 @@ export class AideDDScraper extends BaseScraper {
       el = el.nextElementSibling;
     }
     return entries.length ? entries : undefined;
+  }
+
+  /**
+   * Capture the introductory paragraph after a div.rub heading.
+   * This is the first <p> that has NO <strong> tag — e.g. the legendary
+   * actions intro text like "The lich can take 3 legendary actions...".
+   * Returns the text string, or undefined if not found.
+   */
+  _parseSectionIntro(doc, sectionName) {
+    const rubs = doc.querySelectorAll(".rub");
+    const sectionLower = sectionName.toLowerCase();
+    let targetRub = null;
+    for (const rub of rubs) {
+      if (rub.textContent.trim().toLowerCase() === sectionLower) {
+        targetRub = rub;
+        break;
+      }
+    }
+    if (!targetRub) return undefined;
+
+    let el = targetRub.nextElementSibling;
+    while (el) {
+      if (el.classList?.contains("rub")) break; // Next section
+      if (el.tagName === "P") {
+        const strong = el.querySelector("strong");
+        if (!strong) {
+          // This is the intro paragraph (no <strong> = not an action entry)
+          const text = el.textContent.trim();
+          if (text) return text;
+        }
+        // If the first <p> has <strong>, there's no intro paragraph
+        break;
+      }
+      el = el.nextElementSibling;
+    }
+    return undefined;
   }
 
   /* ------------------------------------------------------------------ */

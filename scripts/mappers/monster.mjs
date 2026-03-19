@@ -951,6 +951,32 @@ export function mapMonster(data) {
     }
   }
 
+  // ─── Legendary / Lair Resources (dnd5e v3+) ──────────────────────────────
+  // Parse legendary action count from legendary_desc intro text, default 3
+  let legActCount = 0;
+  if (data.legendary_actions) {
+    legActCount = 3;
+    if (data.legendary_desc) {
+      const laMatch = data.legendary_desc.match(/can take (\d+) legendary actions/i);
+      if (laMatch) legActCount = parseInt(laMatch[1]);
+    }
+  }
+
+  // Parse legendary resistance count from special_abilities
+  let legResCount = 0;
+  if (data.special_abilities) {
+    for (const ab of data.special_abilities) {
+      const lrMatch = ab.name.match(/Legendary Resistance\s*\((\d+)\/Day\)/i);
+      if (lrMatch) { legResCount = parseInt(lrMatch[1]); break; }
+    }
+  }
+
+  actorData.system.resources = {
+    legact: { value: legActCount, max: legActCount },
+    legres: { value: legResCount, max: legResCount },
+    lair: { value: !!data.lair_actions, initiative: 20 },
+  };
+
   return { actorData, spellcasting, externalImg: isExternal ? portraitImg : null };
 }
 

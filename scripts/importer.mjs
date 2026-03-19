@@ -232,6 +232,7 @@ async function resolveSpellItem(spellName, mode, uses, sourceEdition) {
         if (entry) {
           const doc = await pack.getDocument(entry._id);
           const itemData = doc.toObject();
+          itemData._sourcePackEntry = `${packName}::${entry._id}`;
           applySpellPreparation(itemData, mode, uses);
           return itemData;
         }
@@ -386,11 +387,21 @@ async function importAsActor(result, data) {
 
     const spellItems = [];
     const resolvedNames = new Set(); // Final dedup on resolved item names
+    const resolvedSources = new Set(); // Dedup on compendium source identity
     for (const { name, mode, uses } of uniqueSpellNames) {
       const item = await resolveSpellItem(name, mode, uses, sourceEdition);
       if (item) {
-        // Remove _id so Foundry generates a new one
+        // Dedup on compendium source: two different input names resolving
+        // to the same compendium entry (e.g. 'Acid Arrow' and 'Melf's Acid Arrow')
+        const sourceKey = item._sourcePackEntry;
+        if (sourceKey && resolvedSources.has(sourceKey)) {
+          console.log(`${MODULE_ID} | Skipping duplicate resolved spell: "${item.name}" (${mode}) — same compendium entry as previous`);
+          continue;
+        }
+        if (sourceKey) resolvedSources.add(sourceKey);
+        // Remove _id and source marker so Foundry generates a new one
         delete item._id;
+        delete item._sourcePackEntry;
         // Final dedup: check if we already resolved a spell with this exact name+mode
         const dedupKey = `${(item.name || name).toLowerCase()}::${item.system?.preparation?.mode || mode}`;
         if (resolvedNames.has(dedupKey)) {
