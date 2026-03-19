@@ -111,172 +111,178 @@ function resolveIcon(preferredPath, ...fallbacks) {
  * Paths are based on game-icons.net naming convention used by Foundry V10+.
  * Some icons were renamed/reorganized in V12 — use the most stable paths.
  */
+// ═══════════════════════════════════════════════════════════════════════════
+// ICON_MAP — ALL paths verified against Foundry v13 icon dump (6326 files)
+// Last verified: 2026-03-18 from Gage's Foundry instance
+// ═══════════════════════════════════════════════════════════════════════════
 const ICON_MAP = {
   // ── Natural Weapons ──
   bite: "icons/creatures/abilities/mouth-teeth-rows-red.webp",
-  claw: "icons/skills/melee/strike-claw-red.webp",
-  claws: "icons/skills/melee/strike-claw-red.webp",
-  tail: "icons/skills/melee/strike-chain-yellow.webp",
-  "tail attack": "icons/skills/melee/strike-chain-yellow.webp",
+  claw: "icons/creatures/claws/claw-bear-paw-swipe-red.webp",
+  claws: "icons/creatures/claws/claw-bear-paw-swipe-red.webp",
+  tail: "icons/creatures/abilities/tail-swipe-green.webp",
+  "tail attack": "icons/creatures/abilities/tail-strike-bone-orange.webp",
   slam: "icons/skills/melee/unarmed-punch-fist.webp",
   fist: "icons/skills/melee/unarmed-punch-fist.webp",
-  gore: "icons/skills/melee/strike-polearm-light.webp",
-  horn: "icons/skills/melee/strike-polearm-light.webp",
-  horns: "icons/skills/melee/strike-polearm-light.webp",
-  sting: "icons/skills/melee/strike-dagger-red.webp",
-  stinger: "icons/skills/melee/strike-dagger-red.webp",
-  tentacle: "icons/skills/melee/strike-whip-gray.webp",
-  tentacles: "icons/skills/melee/strike-whip-gray.webp",
-  pincer: "icons/skills/melee/strike-claw-red.webp",
-  pincers: "icons/skills/melee/strike-claw-red.webp",
-  talon: "icons/skills/melee/strike-claw-red.webp",
-  talons: "icons/skills/melee/strike-claw-red.webp",
-  tusk: "icons/skills/melee/strike-polearm-light.webp",
-  tusks: "icons/skills/melee/strike-polearm-light.webp",
-  beak: "icons/skills/melee/strike-dagger-red.webp",
-  constrict: "icons/skills/melee/strike-whip-gray.webp",
+  gore: "icons/skills/melee/strike-polearm-light-orange.webp",
+  horn: "icons/commodities/bones/horn-curved-brown.webp",
+  horns: "icons/commodities/bones/horn-curved-brown.webp",
+  sting: "icons/creatures/abilities/stinger-poison-green.webp",
+  stinger: "icons/creatures/abilities/stinger-poison-scorpion-brown.webp",
+  tentacle: "icons/creatures/tentacles/tentacles-suctioncups-pink.webp",
+  tentacles: "icons/creatures/tentacles/tentacles-octopus-black-pink.webp",
+  pincer: "icons/creatures/claws/pincer-crab-red.webp",
+  pincers: "icons/creatures/claws/pincer-crab-red.webp",
+  talon: "icons/creatures/claws/claw-talons-glowing-orange.webp",
+  talons: "icons/creatures/claws/claw-talons-glowing-orange.webp",
+  tusk: "icons/commodities/bones/horn-curved-grey.webp",
+  tusks: "icons/commodities/bones/horn-curved-grey.webp",
+  beak: "icons/commodities/bones/beak-hooked-red.webp",
+  constrict: "icons/creatures/tentacles/tentacles-suctioncups-pink.webp",
   crush: "icons/skills/melee/unarmed-punch-fist.webp",
   swallow: "icons/creatures/abilities/mouth-teeth-rows-red.webp",
-  stomp: "icons/skills/melee/unarmed-punch-fist.webp",
-  wing: "icons/skills/melee/strike-chain-yellow.webp",
-  "wing attack": "icons/skills/melee/strike-chain-yellow.webp",
-  pseudopod: "icons/skills/melee/strike-whip-gray.webp",
-  tendril: "icons/skills/melee/strike-whip-gray.webp",
+  stomp: "icons/magic/earth/strike-fist-stone.webp",
+  wing: "icons/creatures/abilities/wing-batlike-purple-blue.webp",
+  "wing attack": "icons/creatures/abilities/wing-batlike-purple-blue.webp",
+  pseudopod: "icons/creatures/slimes/slime-movement-pseudopod-green.webp",
+  tendril: "icons/creatures/tentacles/tentacle-eyes-yellow-pink.webp",
   "rotting touch": "icons/magic/unholy/strike-body-life-soul.webp",
   "life drain": "icons/magic/unholy/strike-body-life-soul.webp",
-  "strength drain": "icons/magic/unholy/strike-body-life-soul.webp",
-  "energy drain": "icons/magic/unholy/strike-body-life-soul.webp",
+  "strength drain": "icons/magic/unholy/strike-body-life-soul-purple.webp",
+  "energy drain": "icons/magic/unholy/strike-body-life-soul-purple.webp",
   touch: "icons/skills/melee/unarmed-punch-fist.webp",
 
   // ── Standard Weapons ──
   shortsword: "icons/weapons/swords/shortsword-guard-worn.webp",
-  longsword: "icons/weapons/swords/longsword-guard-broad.webp",
+  longsword: "icons/weapons/swords/sword-guard-bronze.webp",
   greatsword: "icons/weapons/swords/greatsword-crossguard-steel.webp",
-  scimitar: "icons/weapons/swords/sword-guard-bronze.webp",
-  rapier: "icons/weapons/swords/shortsword-guard-worn.webp",
-  dagger: "icons/weapons/daggers/dagger-broad-bronze.webp",
+  scimitar: "icons/weapons/swords/scimitar-guard-brown.webp",
+  rapier: "icons/weapons/swords/shortsword-guard-brass.webp",
+  dagger: "icons/weapons/daggers/dagger-curved-blue.webp",
   greataxe: "icons/weapons/axes/axe-broad-brown.webp",
-  handaxe: "icons/weapons/axes/hatchet-broad-brown.webp",
-  battleaxe: "icons/weapons/axes/axe-broad-brown.webp",
+  handaxe: "icons/weapons/axes/shortaxe-simple-black.webp",
+  battleaxe: "icons/weapons/axes/axe-battle-simple.webp",
   mace: "icons/weapons/maces/mace-round-spiked-black.webp",
-  morningstar: "icons/weapons/maces/mace-round-spiked-black.webp",
+  morningstar: "icons/weapons/maces/mace-spiked-steel-grey.webp",
   warhammer: "icons/weapons/hammers/hammer-war-spiked.webp",
   maul: "icons/weapons/hammers/hammer-war-spiked.webp",
-  flail: "icons/weapons/maces/mace-round-spiked-black.webp",
+  flail: "icons/weapons/maces/flail-spiked-grey.webp",
   club: "icons/weapons/clubs/club-heavy-barbed-brown.webp",
   greatclub: "icons/weapons/clubs/club-heavy-barbed-brown.webp",
   quarterstaff: "icons/weapons/staves/staff-simple.webp",
   staff: "icons/weapons/staves/staff-simple.webp",
-  spear: "icons/weapons/polearms/spear-simple.webp",
+  spear: "icons/weapons/polearms/spear-flared-blue.webp",
   javelin: "icons/weapons/polearms/javelin-simple.webp",
-  pike: "icons/weapons/polearms/pike-flared.webp",
-  halberd: "icons/weapons/polearms/halberd-crescent.webp",
-  glaive: "icons/weapons/polearms/glaive-winged.webp",
-  trident: "icons/weapons/polearms/trident-silver.webp",
-  lance: "icons/weapons/polearms/lance-simple.webp",
-  whip: "icons/weapons/misc/whip-pointed-brown.webp",
-  net: "icons/weapons/misc/whip-pointed-brown.webp",
-  sickle: "icons/weapons/daggers/dagger-broad-bronze.webp",
+  pike: "icons/weapons/polearms/pike-flared-brown.webp",
+  halberd: "icons/weapons/polearms/halberd-crescent-steel.webp",
+  glaive: "icons/weapons/polearms/glaive-simple.webp",
+  trident: "icons/weapons/polearms/trident-silver-blue.webp",
+  lance: "icons/weapons/polearms/spear-flared-gold.webp",
+  whip: "icons/weapons/misc/whip-red-yellow.webp",
+  net: "icons/tools/fishing/net-simple-brown.webp",
+  sickle: "icons/weapons/sickles/sickle-simple-grey.webp",
 
   // ── Ranged Weapons ──
   longbow: "icons/weapons/bows/longbow-recurve.webp",
   shortbow: "icons/weapons/bows/shortbow-recurve.webp",
-  "light crossbow": "icons/weapons/crossbows/crossbow-simple-brown.webp",
-  "heavy crossbow": "icons/weapons/crossbows/crossbow-heavy-brown.webp",
-  "hand crossbow": "icons/weapons/crossbows/crossbow-simple-brown.webp",
-  crossbow: "icons/weapons/crossbows/crossbow-simple-brown.webp",
-  sling: "icons/weapons/slings/sling-simple-leather.webp",
-  dart: "icons/weapons/daggers/dagger-broad-bronze.webp",
-  blowgun: "icons/weapons/slings/sling-simple-leather.webp",
-  rock: "icons/weapons/ammunition/rock-smooth.webp",
-  boulder: "icons/weapons/ammunition/rock-smooth.webp",
+  "light crossbow": "icons/weapons/crossbows/crossbow-simple-black.webp",
+  "heavy crossbow": "icons/weapons/crossbows/crossbow-heavy-black.webp",
+  "hand crossbow": "icons/weapons/crossbows/handcrossbow-black.webp",
+  crossbow: "icons/weapons/crossbows/crossbow-simple-black.webp",
+  sling: "icons/weapons/slings/slingshot-wood.webp",
+  dart: "icons/weapons/thrown/dart-feathered.webp",
+  blowgun: "icons/weapons/slings/slingshot-wood.webp",
+  rock: "icons/commodities/stone/boulder-grey.webp",
+  boulder: "icons/commodities/stone/boulder-grey.webp",
 
   // ── Breath Weapons ──
-  "breath weapon": "icons/magic/fire/beam-jet-stream-embers.webp",
-  "breath weapons": "icons/magic/fire/beam-jet-stream-embers.webp",
-  "fire breath": "icons/magic/fire/beam-jet-stream-embers.webp",
-  "cold breath": "icons/magic/water/projectile-icecicle.webp",
-  "lightning breath": "icons/magic/lightning/bolt-strike-blue.webp",
+  "breath weapon": "icons/creatures/abilities/dragon-fire-breath-orange.webp",
+  "breath weapons": "icons/creatures/abilities/dragon-fire-breath-orange.webp",
+  "fire breath": "icons/creatures/abilities/dragon-fire-breath-orange.webp",
+  "cold breath": "icons/creatures/abilities/dragon-ice-breath-blue.webp",
+  "lightning breath": "icons/magic/lightning/bolt-forked-large-blue.webp",
   "acid breath": "icons/magic/acid/projectile-faceted-glob.webp",
-  "poison breath": "icons/magic/acid/projectile-faceted-glob.webp",
+  "poison breath": "icons/creatures/abilities/fang-tooth-poison-green.webp",
   "necrotic breath": "icons/magic/unholy/strike-body-life-soul.webp",
 
   // ── Special Monster Abilities ──
-  "frightful presence": "icons/magic/control/fear-fright-shadow-monster.webp",
-  "eye rays": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
-  "antimagic cone": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
-  multiattack: "icons/skills/melee/strike-claw-red.webp",
+  "frightful presence": "icons/magic/control/fear-fright-shadow-monster-green.webp",
+  "eye rays": "icons/magic/perception/eye-ringed-glow-angry-small-red.webp",
+  "antimagic cone": "icons/magic/perception/eye-ringed-glow-angry-small-teal.webp",
+  multiattack: "icons/skills/melee/weapons-crossed-swords-yellow.webp",
   "legendary resistance": "icons/magic/defensive/shield-barrier-glowing-triangle-magenta.webp",
-  "magic resistance": "icons/magic/defensive/shield-barrier-glowing-triangle-magenta.webp",
+  "magic resistance": "icons/magic/defensive/shield-barrier-glowing-triangle-blue.webp",
   spellcasting: "icons/magic/symbols/runes-star-pentagon-blue.webp",
   "innate spellcasting": "icons/magic/symbols/runes-star-pentagon-blue.webp",
   regeneration: "icons/magic/life/heart-cross-strong-green.webp",
-  rejuvenation: "icons/magic/life/heart-cross-strong-green.webp",
-  "spider climb": "icons/skills/targeting/target-strike-triple-blue.webp",
-  "web sense": "icons/skills/targeting/target-strike-triple-blue.webp",
-  "web walker": "icons/skills/targeting/target-strike-triple-blue.webp",
-  web: "icons/skills/targeting/target-strike-triple-blue.webp",
-  teleport: "icons/magic/movement/trail-streaks-fast-blue.webp",
-  "misty step": "icons/magic/movement/trail-streaks-fast-blue.webp",
-  shapechanger: "icons/magic/control/debuff-transformation.webp",
-  "change shape": "icons/magic/control/debuff-transformation.webp",
-  "detect": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
-  charm: "icons/magic/control/fear-fright-shadow-monster.webp",
-  "charm person": "icons/magic/control/fear-fright-shadow-monster.webp",
+  rejuvenation: "icons/magic/life/cross-beam-green.webp",
+  "spider climb": "icons/creatures/webs/web-spider-white-green.webp",
+  "web sense": "icons/creatures/webs/web-spider-white-green.webp",
+  "web walker": "icons/creatures/webs/web-spider-white-green.webp",
+  web: "icons/creatures/webs/web-spider-white-green.webp",
+  teleport: "icons/magic/movement/trail-streak-pink.webp",
+  "misty step": "icons/magic/movement/trail-streak-pink.webp",
+  shapechanger: "icons/magic/control/silhouette-hold-change-blue.webp",
+  "change shape": "icons/magic/control/silhouette-hold-change-blue.webp",
+  detect: "icons/magic/perception/eye-ringed-glow-angry-small-teal.webp",
+  charm: "icons/magic/control/hypnosis-mesmerism-eye.webp",
+  "charm person": "icons/magic/control/hypnosis-mesmerism-eye.webp",
 
   // ── Ray/Beam Attacks ──
-  ray: "icons/magic/perception/eye-ringed-glow-angry-small.webp",
-  "charm ray": "icons/magic/control/fear-fright-shadow-monster.webp",
+  ray: "icons/magic/perception/eye-ringed-glow-angry-small-red.webp",
+  "charm ray": "icons/magic/control/hypnosis-mesmerism-eye.webp",
   "paralyzing ray": "icons/magic/lightning/bolt-strike-blue.webp",
-  "fear ray": "icons/magic/control/fear-fright-shadow-monster.webp",
+  "fear ray": "icons/magic/control/fear-fright-shadow-monster-purple.webp",
   "slowing ray": "icons/magic/time/clock-stopwatch-white-blue.webp",
-  "enervation ray": "icons/magic/unholy/strike-body-life-soul.webp",
-  "telekinetic ray": "icons/magic/movement/trail-streaks-fast-blue.webp",
-  "sleep ray": "icons/magic/control/fear-fright-shadow-monster.webp",
-  "petrification ray": "icons/magic/earth/projectile-boulder-brown.webp",
+  "enervation ray": "icons/magic/unholy/strike-body-life-soul-purple.webp",
+  "telekinetic ray": "icons/magic/control/debuff-energy-hold-levitate-blue-yellow.webp",
+  "sleep ray": "icons/magic/control/sleep-bubble-purple.webp",
+  "petrification ray": "icons/magic/earth/projectile-boulder-debris.webp",
   "disintegration ray": "icons/magic/fire/beam-jet-stream-embers.webp",
   "death ray": "icons/magic/unholy/strike-body-life-soul.webp",
 
   // ── Gaze/Aura Attacks ──
-  gaze: "icons/magic/perception/eye-ringed-glow-angry-small.webp",
-  "petrifying gaze": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
-  "death glare": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
-  "horrifying visage": "icons/magic/control/fear-fright-shadow-monster.webp",
+  gaze: "icons/magic/perception/eye-ringed-glow-angry-small-red.webp",
+  "petrifying gaze": "icons/magic/perception/eye-ringed-glow-angry-small-red.webp",
+  "death glare": "icons/magic/perception/eye-ringed-glow-angry-small-red.webp",
+  "horrifying visage": "icons/magic/control/fear-fright-shadow-monster-purple.webp",
   "withering touch": "icons/magic/unholy/strike-body-life-soul.webp",
   "paralyzing touch": "icons/magic/lightning/bolt-strike-blue.webp",
-  "corrupting touch": "icons/magic/unholy/strike-body-life-soul.webp",
-  "wail": "icons/magic/sonic/explosion-shock-wave-silhouette.webp",
-  "banshee wail": "icons/magic/sonic/explosion-shock-wave-silhouette.webp",
-  "howl": "icons/magic/sonic/explosion-shock-wave-silhouette.webp",
+  "corrupting touch": "icons/magic/unholy/strike-body-life-soul-purple.webp",
+  wail: "icons/magic/sonic/scream-wail-shout-teal.webp",
+  "banshee wail": "icons/magic/sonic/scream-wail-shout-teal.webp",
+  howl: "icons/magic/sonic/scream-wail-shout-teal.webp",
 
   // ── Swarm/Group Attacks ──
-  "swarm": "icons/creatures/abilities/mouth-teeth-rows-red.webp",
-  bites: "icons/creatures/abilities/mouth-teeth-rows-red.webp",
+  swarm: "icons/creatures/abilities/mouth-teeth-rows-red.webp",
+  bites: "icons/creatures/abilities/fang-tooth-blood-red.webp",
 
   // ── Miscellaneous ──
-  "etherealness": "icons/magic/movement/trail-streaks-fast-blue.webp",
-  "invisibility": "icons/magic/movement/trail-streaks-fast-blue.webp",
-  "leadership": "icons/skills/targeting/target-strike-triple-blue.webp",
-  "parry": "icons/skills/melee/strike-chain-yellow.webp",
-  "redirect attack": "icons/skills/melee/strike-chain-yellow.webp",
-  displacement: "icons/magic/movement/trail-streaks-fast-blue.webp",
+  etherealness: "icons/creatures/magical/spirit-undead-ghost-blue.webp",
+  invisibility: "icons/magic/perception/shadow-stealth-eyes-purple.webp",
+  leadership: "icons/skills/social/diplomacy-handshake.webp",
+  parry: "icons/skills/melee/swords-parry-block-yellow.webp",
+  "redirect attack": "icons/skills/melee/swords-parry-block-yellow.webp",
+  displacement: "icons/magic/defensive/illusion-evasion-echo-purple.webp",
   avoidance: "icons/magic/defensive/shield-barrier-glowing-triangle-magenta.webp",
+  "turn resistance": "icons/magic/defensive/shield-barrier-glowing-triangle-blue.webp",
 };
 
+// ALL paths verified against Foundry v13 icon dump
 const DAMAGE_TYPE_ICONS = {
   fire: "icons/magic/fire/beam-jet-stream-embers.webp",
   cold: "icons/magic/water/projectile-icecicle.webp",
   lightning: "icons/magic/lightning/bolt-strike-blue.webp",
-  thunder: "icons/magic/sonic/explosion-shock-wave-silhouette.webp",
+  thunder: "icons/magic/sonic/explosion-shock-wave-teal.webp",
   acid: "icons/magic/acid/projectile-faceted-glob.webp",
-  poison: "icons/magic/acid/projectile-faceted-glob.webp",
+  poison: "icons/creatures/abilities/fang-tooth-poison-green.webp",
   necrotic: "icons/magic/unholy/strike-body-life-soul.webp",
-  radiant: "icons/magic/holy/projectiles-blades-702702.webp",
-  psychic: "icons/magic/control/fear-fright-shadow-monster.webp",
-  force: "icons/magic/sonic/explosion-shock-wave-silhouette.webp",
+  radiant: "icons/magic/light/explosion-star-glow-blue-purple.webp",
+  psychic: "icons/magic/control/fear-fright-shadow-monster-purple.webp",
+  force: "icons/magic/sonic/explosion-shock-wave-teal.webp",
   bludgeoning: "icons/skills/melee/unarmed-punch-fist.webp",
-  piercing: "icons/skills/melee/strike-dagger-red.webp",
-  slashing: "icons/skills/melee/strike-claw-red.webp",
+  piercing: "icons/skills/melee/strike-dagger-blood-red.webp",
+  slashing: "icons/creatures/claws/claw-bear-paw-swipe-red.webp",
 };
 
 // Use icons/svg/ paths as defaults — these are GUARANTEED to exist in all Foundry versions
@@ -309,22 +315,22 @@ function pickActionIcon(action) {
   if (/ranged.*attack/i.test(desc)) return DEFAULT_RANGED_ICON;
   if (/spell|spellcasting/i.test(desc)) return DEFAULT_SPELL_ICON;
 
-  // Description-based: check for common ability keywords
+  // Description-based: check for common ability keywords (ALL paths verified v13)
   if (/saving throw/i.test(desc)) return "icons/magic/defensive/shield-barrier-glowing-triangle-magenta.webp";
-  if (/frighten|frightened/i.test(desc)) return "icons/magic/control/fear-fright-shadow-monster.webp";
-  if (/charm|charmed/i.test(desc)) return "icons/magic/control/fear-fright-shadow-monster.webp";
-  if (/poison|poisoned/i.test(desc)) return "icons/magic/acid/projectile-faceted-glob.webp";
+  if (/frighten|frightened/i.test(desc)) return "icons/magic/control/fear-fright-shadow-monster-green.webp";
+  if (/charm|charmed/i.test(desc)) return "icons/magic/control/hypnosis-mesmerism-eye.webp";
+  if (/poison|poisoned/i.test(desc)) return "icons/creatures/abilities/fang-tooth-poison-green.webp";
   if (/paralyz/i.test(desc)) return "icons/magic/lightning/bolt-strike-blue.webp";
-  if (/petrif/i.test(desc)) return "icons/magic/earth/projectile-boulder-brown.webp";
-  if (/teleport/i.test(desc)) return "icons/magic/movement/trail-streaks-fast-blue.webp";
+  if (/petrif/i.test(desc)) return "icons/magic/earth/projectile-boulder-debris.webp";
+  if (/teleport/i.test(desc)) return "icons/magic/movement/trail-streak-pink.webp";
   if (/heal|regain.*hit points/i.test(desc)) return "icons/magic/life/heart-cross-strong-green.webp";
   if (/necrotic/i.test(desc)) return "icons/magic/unholy/strike-body-life-soul.webp";
-  if (/radiant/i.test(desc)) return "icons/magic/holy/projectiles-blades-702702.webp";
+  if (/radiant/i.test(desc)) return "icons/magic/light/explosion-star-glow-blue-purple.webp";
   if (/fire/i.test(desc)) return "icons/magic/fire/beam-jet-stream-embers.webp";
   if (/cold|ice|frost/i.test(desc)) return "icons/magic/water/projectile-icecicle.webp";
   if (/lightning|thunder/i.test(desc)) return "icons/magic/lightning/bolt-strike-blue.webp";
-  if (/psychic/i.test(desc)) return "icons/magic/control/fear-fright-shadow-monster.webp";
-  if (/force/i.test(desc)) return "icons/magic/sonic/explosion-shock-wave-silhouette.webp";
+  if (/psychic/i.test(desc)) return "icons/magic/control/fear-fright-shadow-monster-purple.webp";
+  if (/force/i.test(desc)) return "icons/magic/sonic/explosion-shock-wave-teal.webp";
   if (/acid/i.test(desc)) return "icons/magic/acid/projectile-faceted-glob.webp";
 
   return DEFAULT_FEAT_ICON;
