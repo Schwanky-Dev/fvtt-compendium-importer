@@ -573,6 +573,11 @@ function buildActionItem(action, type = "natural") {
 
     if (activityBase.type) {
       item.system.activities = { [actId]: activityBase };
+      // REMOVE legacy damage.parts when Activities are set — otherwise dnd5e
+      // auto-migration reads BOTH and doubles the damage values
+      delete item.system.damage;
+      // Also remove legacy actionType so auto-migration doesn't fire
+      delete item.system.actionType;
     }
   }
 
