@@ -363,7 +363,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onConfigureTiers() {
-    const ALL_SOURCES = ["open5e", "aidedd", "roll20", "ddb", "wikidot"];
+    const ALL_SOURCES = ["internal", "open5e", "aidedd", "roll20", "ddb", "wikidot"];
     let tierConfig;
     try {
       tierConfig = JSON.parse(game.settings.get(MODULE_ID, "tierConfig"));

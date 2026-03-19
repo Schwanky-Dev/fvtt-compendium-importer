@@ -112,20 +112,48 @@ function resolveIcon(preferredPath, ...fallbacks) {
  * Some icons were renamed/reorganized in V12 — use the most stable paths.
  */
 const ICON_MAP = {
+  // ── Natural Weapons ──
   bite: "icons/creatures/abilities/mouth-teeth-rows-red.webp",
   claw: "icons/skills/melee/strike-claw-red.webp",
   claws: "icons/skills/melee/strike-claw-red.webp",
   tail: "icons/skills/melee/strike-chain-yellow.webp",
+  "tail attack": "icons/skills/melee/strike-chain-yellow.webp",
   slam: "icons/skills/melee/unarmed-punch-fist.webp",
   fist: "icons/skills/melee/unarmed-punch-fist.webp",
   gore: "icons/skills/melee/strike-polearm-light.webp",
+  horn: "icons/skills/melee/strike-polearm-light.webp",
+  horns: "icons/skills/melee/strike-polearm-light.webp",
   sting: "icons/skills/melee/strike-dagger-red.webp",
+  stinger: "icons/skills/melee/strike-dagger-red.webp",
   tentacle: "icons/skills/melee/strike-whip-gray.webp",
   tentacles: "icons/skills/melee/strike-whip-gray.webp",
+  pincer: "icons/skills/melee/strike-claw-red.webp",
+  pincers: "icons/skills/melee/strike-claw-red.webp",
+  talon: "icons/skills/melee/strike-claw-red.webp",
+  talons: "icons/skills/melee/strike-claw-red.webp",
+  tusk: "icons/skills/melee/strike-polearm-light.webp",
+  tusks: "icons/skills/melee/strike-polearm-light.webp",
+  beak: "icons/skills/melee/strike-dagger-red.webp",
+  constrict: "icons/skills/melee/strike-whip-gray.webp",
+  crush: "icons/skills/melee/unarmed-punch-fist.webp",
+  swallow: "icons/creatures/abilities/mouth-teeth-rows-red.webp",
+  stomp: "icons/skills/melee/unarmed-punch-fist.webp",
+  wing: "icons/skills/melee/strike-chain-yellow.webp",
+  "wing attack": "icons/skills/melee/strike-chain-yellow.webp",
+  pseudopod: "icons/skills/melee/strike-whip-gray.webp",
+  tendril: "icons/skills/melee/strike-whip-gray.webp",
+  "rotting touch": "icons/magic/unholy/strike-body-life-soul.webp",
+  "life drain": "icons/magic/unholy/strike-body-life-soul.webp",
+  "strength drain": "icons/magic/unholy/strike-body-life-soul.webp",
+  "energy drain": "icons/magic/unholy/strike-body-life-soul.webp",
+  touch: "icons/skills/melee/unarmed-punch-fist.webp",
+
+  // ── Standard Weapons ──
   shortsword: "icons/weapons/swords/shortsword-guard-worn.webp",
   longsword: "icons/weapons/swords/longsword-guard-broad.webp",
   greatsword: "icons/weapons/swords/greatsword-crossguard-steel.webp",
   scimitar: "icons/weapons/swords/sword-guard-bronze.webp",
+  rapier: "icons/weapons/swords/shortsword-guard-worn.webp",
   dagger: "icons/weapons/daggers/dagger-broad-bronze.webp",
   greataxe: "icons/weapons/axes/axe-broad-brown.webp",
   handaxe: "icons/weapons/axes/hatchet-broad-brown.webp",
@@ -134,6 +162,7 @@ const ICON_MAP = {
   morningstar: "icons/weapons/maces/mace-round-spiked-black.webp",
   warhammer: "icons/weapons/hammers/hammer-war-spiked.webp",
   maul: "icons/weapons/hammers/hammer-war-spiked.webp",
+  flail: "icons/weapons/maces/mace-round-spiked-black.webp",
   club: "icons/weapons/clubs/club-heavy-barbed-brown.webp",
   greatclub: "icons/weapons/clubs/club-heavy-barbed-brown.webp",
   quarterstaff: "icons/weapons/staves/staff-simple.webp",
@@ -146,21 +175,92 @@ const ICON_MAP = {
   trident: "icons/weapons/polearms/trident-silver.webp",
   lance: "icons/weapons/polearms/lance-simple.webp",
   whip: "icons/weapons/misc/whip-pointed-brown.webp",
+  net: "icons/weapons/misc/whip-pointed-brown.webp",
+  sickle: "icons/weapons/daggers/dagger-broad-bronze.webp",
+
+  // ── Ranged Weapons ──
   longbow: "icons/weapons/bows/longbow-recurve.webp",
   shortbow: "icons/weapons/bows/shortbow-recurve.webp",
   "light crossbow": "icons/weapons/crossbows/crossbow-simple-brown.webp",
   "heavy crossbow": "icons/weapons/crossbows/crossbow-heavy-brown.webp",
+  "hand crossbow": "icons/weapons/crossbows/crossbow-simple-brown.webp",
   crossbow: "icons/weapons/crossbows/crossbow-simple-brown.webp",
   sling: "icons/weapons/slings/sling-simple-leather.webp",
+  dart: "icons/weapons/daggers/dagger-broad-bronze.webp",
+  blowgun: "icons/weapons/slings/sling-simple-leather.webp",
   rock: "icons/weapons/ammunition/rock-smooth.webp",
+  boulder: "icons/weapons/ammunition/rock-smooth.webp",
+
+  // ── Breath Weapons ──
   "breath weapon": "icons/magic/fire/beam-jet-stream-embers.webp",
+  "breath weapons": "icons/magic/fire/beam-jet-stream-embers.webp",
   "fire breath": "icons/magic/fire/beam-jet-stream-embers.webp",
   "cold breath": "icons/magic/water/projectile-icecicle.webp",
   "lightning breath": "icons/magic/lightning/bolt-strike-blue.webp",
   "acid breath": "icons/magic/acid/projectile-faceted-glob.webp",
   "poison breath": "icons/magic/acid/projectile-faceted-glob.webp",
+  "necrotic breath": "icons/magic/unholy/strike-body-life-soul.webp",
+
+  // ── Special Monster Abilities ──
   "frightful presence": "icons/magic/control/fear-fright-shadow-monster.webp",
   "eye rays": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
+  "antimagic cone": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
+  multiattack: "icons/skills/melee/strike-claw-red.webp",
+  "legendary resistance": "icons/magic/defensive/shield-barrier-glowing-triangle-magenta.webp",
+  "magic resistance": "icons/magic/defensive/shield-barrier-glowing-triangle-magenta.webp",
+  spellcasting: "icons/magic/symbols/runes-star-pentagon-blue.webp",
+  "innate spellcasting": "icons/magic/symbols/runes-star-pentagon-blue.webp",
+  regeneration: "icons/magic/life/heart-cross-strong-green.webp",
+  rejuvenation: "icons/magic/life/heart-cross-strong-green.webp",
+  "spider climb": "icons/skills/targeting/target-strike-triple-blue.webp",
+  "web sense": "icons/skills/targeting/target-strike-triple-blue.webp",
+  "web walker": "icons/skills/targeting/target-strike-triple-blue.webp",
+  web: "icons/skills/targeting/target-strike-triple-blue.webp",
+  teleport: "icons/magic/movement/trail-streaks-fast-blue.webp",
+  "misty step": "icons/magic/movement/trail-streaks-fast-blue.webp",
+  shapechanger: "icons/magic/control/debuff-transformation.webp",
+  "change shape": "icons/magic/control/debuff-transformation.webp",
+  "detect": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
+  charm: "icons/magic/control/fear-fright-shadow-monster.webp",
+  "charm person": "icons/magic/control/fear-fright-shadow-monster.webp",
+
+  // ── Ray/Beam Attacks ──
+  ray: "icons/magic/perception/eye-ringed-glow-angry-small.webp",
+  "charm ray": "icons/magic/control/fear-fright-shadow-monster.webp",
+  "paralyzing ray": "icons/magic/lightning/bolt-strike-blue.webp",
+  "fear ray": "icons/magic/control/fear-fright-shadow-monster.webp",
+  "slowing ray": "icons/magic/time/clock-stopwatch-white-blue.webp",
+  "enervation ray": "icons/magic/unholy/strike-body-life-soul.webp",
+  "telekinetic ray": "icons/magic/movement/trail-streaks-fast-blue.webp",
+  "sleep ray": "icons/magic/control/fear-fright-shadow-monster.webp",
+  "petrification ray": "icons/magic/earth/projectile-boulder-brown.webp",
+  "disintegration ray": "icons/magic/fire/beam-jet-stream-embers.webp",
+  "death ray": "icons/magic/unholy/strike-body-life-soul.webp",
+
+  // ── Gaze/Aura Attacks ──
+  gaze: "icons/magic/perception/eye-ringed-glow-angry-small.webp",
+  "petrifying gaze": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
+  "death glare": "icons/magic/perception/eye-ringed-glow-angry-small.webp",
+  "horrifying visage": "icons/magic/control/fear-fright-shadow-monster.webp",
+  "withering touch": "icons/magic/unholy/strike-body-life-soul.webp",
+  "paralyzing touch": "icons/magic/lightning/bolt-strike-blue.webp",
+  "corrupting touch": "icons/magic/unholy/strike-body-life-soul.webp",
+  "wail": "icons/magic/sonic/explosion-shock-wave-silhouette.webp",
+  "banshee wail": "icons/magic/sonic/explosion-shock-wave-silhouette.webp",
+  "howl": "icons/magic/sonic/explosion-shock-wave-silhouette.webp",
+
+  // ── Swarm/Group Attacks ──
+  "swarm": "icons/creatures/abilities/mouth-teeth-rows-red.webp",
+  bites: "icons/creatures/abilities/mouth-teeth-rows-red.webp",
+
+  // ── Miscellaneous ──
+  "etherealness": "icons/magic/movement/trail-streaks-fast-blue.webp",
+  "invisibility": "icons/magic/movement/trail-streaks-fast-blue.webp",
+  "leadership": "icons/skills/targeting/target-strike-triple-blue.webp",
+  "parry": "icons/skills/melee/strike-chain-yellow.webp",
+  "redirect attack": "icons/skills/melee/strike-chain-yellow.webp",
+  displacement: "icons/magic/movement/trail-streaks-fast-blue.webp",
+  avoidance: "icons/magic/defensive/shield-barrier-glowing-triangle-magenta.webp",
 };
 
 const DAMAGE_TYPE_ICONS = {
@@ -188,18 +288,44 @@ function pickActionIcon(action) {
   const name = (action.name ?? "").toLowerCase().trim();
   const desc = (action.desc ?? "").toLowerCase();
 
+  // Exact match first
   if (ICON_MAP[name]) return resolveIcon(ICON_MAP[name]);
+
+  // Partial match (action name contains a key)
   for (const [key, icon] of Object.entries(ICON_MAP)) {
     if (name.includes(key)) return resolveIcon(icon);
   }
+
+  // Description-based: check for specific damage types
   const dmgMatch = desc.match(/(\w+)\s+damage/i);
   if (dmgMatch) {
     const dt = dmgMatch[1].toLowerCase();
     if (DAMAGE_TYPE_ICONS[dt]) return resolveIcon(DAMAGE_TYPE_ICONS[dt]);
   }
+
+  // Description-based: check for attack type
   if (/melee.*attack/i.test(desc)) return DEFAULT_MELEE_ICON;
   if (/ranged.*attack/i.test(desc)) return DEFAULT_RANGED_ICON;
   if (/spell|spellcasting/i.test(desc)) return DEFAULT_SPELL_ICON;
+
+  // Description-based: check for common ability keywords
+  if (/saving throw/i.test(desc)) return "icons/magic/defensive/shield-barrier-glowing-triangle-magenta.webp";
+  if (/frighten|frightened/i.test(desc)) return "icons/magic/control/fear-fright-shadow-monster.webp";
+  if (/charm|charmed/i.test(desc)) return "icons/magic/control/fear-fright-shadow-monster.webp";
+  if (/poison|poisoned/i.test(desc)) return "icons/magic/acid/projectile-faceted-glob.webp";
+  if (/paralyz/i.test(desc)) return "icons/magic/lightning/bolt-strike-blue.webp";
+  if (/petrif/i.test(desc)) return "icons/magic/earth/projectile-boulder-brown.webp";
+  if (/teleport/i.test(desc)) return "icons/magic/movement/trail-streaks-fast-blue.webp";
+  if (/heal|regain.*hit points/i.test(desc)) return "icons/magic/life/heart-cross-strong-green.webp";
+  if (/necrotic/i.test(desc)) return "icons/magic/unholy/strike-body-life-soul.webp";
+  if (/radiant/i.test(desc)) return "icons/magic/holy/projectiles-blades-702702.webp";
+  if (/fire/i.test(desc)) return "icons/magic/fire/beam-jet-stream-embers.webp";
+  if (/cold|ice|frost/i.test(desc)) return "icons/magic/water/projectile-icecicle.webp";
+  if (/lightning|thunder/i.test(desc)) return "icons/magic/lightning/bolt-strike-blue.webp";
+  if (/psychic/i.test(desc)) return "icons/magic/control/fear-fright-shadow-monster.webp";
+  if (/force/i.test(desc)) return "icons/magic/sonic/explosion-shock-wave-silhouette.webp";
+  if (/acid/i.test(desc)) return "icons/magic/acid/projectile-faceted-glob.webp";
+
   return DEFAULT_FEAT_ICON;
 }
 
@@ -315,15 +441,6 @@ function _genActivityId() {
 }
 
 /**
- * Parse a dice formula like "4d6+2" into Activity damage format.
- */
-function _parseDiceFormula(formula) {
-  const m = formula.match(/^(\d+)d(\d+)(?:\s*([+-]\s*\d+))?$/);
-  if (!m) return null;
-  return { number: parseInt(m[1]), denomination: parseInt(m[2]), bonus: (m[3] || "").replace(/\s/g, "") };
-}
-
-/**
  * Build a fully-populated action item for a monster.
  *
  * STRATEGY: Set ONLY legacy fields (actionType, damage.parts, attack, etc.)
@@ -429,10 +546,6 @@ function buildActionItem(action, type = "natural") {
 
     // Convert legacy damage [formula, type] pairs to Activity damage format
     const actDmgParts = (item.system.damage?.parts || []).map(([formula, dmgType]) => {
-      const parsed = _parseDiceFormula(formula);
-      if (parsed) {
-        return { number: parsed.number, denomination: parsed.denomination, bonus: parsed.bonus, types: [dmgType] };
-      }
       return { custom: { enabled: true, formula }, types: [dmgType] };
     });
 

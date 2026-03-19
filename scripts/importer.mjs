@@ -350,6 +350,7 @@ async function importAsActor(result, data) {
     if (!existingSource.includes("via ")) {
       await actor.update({ "system.details.source.custom": `${existingSource} (via ${result.sourceLabel})` });
     }
+    console.log(`${MODULE_ID} | Imported "${actor.name}" with source: "${actor.system?.details?.source?.custom}" (scraper: ${result.source})`);
   }
 
   // Create embedded items (actions, features, etc.)
@@ -357,6 +358,7 @@ async function importAsActor(result, data) {
     await actor.createEmbeddedDocuments("Item", embeddedItems);
   }
 
+  console.log(`${MODULE_ID} | Image for "${actor.name}": externalImg=${externalImg ? externalImg.substring(0, 80) + "..." : "null"}, actorImg=${actorData.img}`);
   // Download and localize external images (stored separately to avoid CORS on token render)
   if (externalImg) {
     const localPath = await downloadAndUploadImage(
