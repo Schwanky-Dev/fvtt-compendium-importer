@@ -103,7 +103,7 @@ function resolveIcon(preferredPath, ...fallbacks) {
   for (const p of [preferredPath, ...fallbacks]) {
     if (p && typeof p === "string" && p.startsWith("icons/")) return p;
   }
-  return DEFAULT_ICON;
+  return DEFAULT_FEAT_ICON;
 }
 
 /**
@@ -279,10 +279,11 @@ const DAMAGE_TYPE_ICONS = {
   slashing: "icons/skills/melee/strike-claw-red.webp",
 };
 
-const DEFAULT_MELEE_ICON = "icons/skills/melee/unarmed-punch-fist.webp";
-const DEFAULT_RANGED_ICON = "icons/weapons/bows/shortbow-recurve.webp";
-const DEFAULT_SPELL_ICON = "icons/magic/symbols/runes-star-pentagon-blue.webp";
-const DEFAULT_FEAT_ICON = "icons/skills/targeting/target-strike-triple-blue.webp";
+// Use icons/svg/ paths as defaults — these are GUARANTEED to exist in all Foundry versions
+const DEFAULT_MELEE_ICON = "icons/svg/sword.svg";
+const DEFAULT_RANGED_ICON = "icons/svg/arrow-right.svg";
+const DEFAULT_SPELL_ICON = "icons/svg/book.svg";
+const DEFAULT_FEAT_ICON = "icons/svg/aura.svg";
 
 function pickActionIcon(action) {
   const name = (action.name ?? "").toLowerCase().trim();

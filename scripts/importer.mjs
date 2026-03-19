@@ -385,11 +385,19 @@ async function importAsActor(result, data) {
     });
 
     const spellItems = [];
+    const resolvedNames = new Set(); // Final dedup on resolved item names
     for (const { name, mode, uses } of uniqueSpellNames) {
       const item = await resolveSpellItem(name, mode, uses, sourceEdition);
       if (item) {
         // Remove _id so Foundry generates a new one
         delete item._id;
+        // Final dedup: check if we already resolved a spell with this exact name+mode
+        const dedupKey = `${(item.name || name).toLowerCase()}::${item.system?.preparation?.mode || mode}`;
+        if (resolvedNames.has(dedupKey)) {
+          console.log(`${MODULE_ID} | Skipping duplicate resolved spell: "${item.name}" (${mode})`);
+          continue;
+        }
+        resolvedNames.add(dedupKey);
         spellItems.push(item);
       }
     }

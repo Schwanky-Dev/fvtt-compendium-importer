@@ -324,9 +324,10 @@ export class AideDDScraper extends BaseScraper {
     const entries = [];
     const rubs = doc.querySelectorAll(".rub");
     let targetRub = null;
+    const sectionLower = sectionName.toLowerCase();
 
     for (const rub of rubs) {
-      if (rub.textContent.trim() === sectionName) {
+      if (rub.textContent.trim().toLowerCase() === sectionLower) {
         targetRub = rub;
         break;
       }
