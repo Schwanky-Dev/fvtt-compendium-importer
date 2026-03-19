@@ -58,6 +58,8 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
   #filterText = "";
   #edition2014 = true;
   #edition2024 = true;
+  /** @type {Array} display-filtered results — kept in sync with template indices */
+  #displayResults = [];
 
   constructor(options = {}) {
     super(options);
@@ -160,6 +162,9 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
       if (r.edition === "2024") return this.#edition2024;
       return this.#edition2014; // 2014 is the default for anything not tagged 2024
     });
+
+    // Store displayResults so #onImport and #onPreview can use the SAME array
+    this.#displayResults = displayResults;
 
     return {
       results: displayResults.map((r, i) => ({
@@ -315,7 +320,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Don't trigger preview if clicking the import button
     if (event.target.closest('[data-action="importResult"]')) return;
     const index = parseInt(target.dataset.index);
-    const result = this.#results[index];
+    const result = this.#displayResults[index];
     if (!result) return;
     if (this.#previewIndex === index) {
       // Toggle off
@@ -336,7 +341,7 @@ export class ImporterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onImport(event, target) {
     const index = parseInt(target.dataset.index);
-    const result = this.#results[index];
+    const result = this.#displayResults[index];
     if (!result) return;
 
     this.#importing.add(index);
