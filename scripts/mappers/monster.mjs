@@ -113,7 +113,7 @@ function resolveIcon(preferredPath, ...fallbacks) {
  */
 // ═══════════════════════════════════════════════════════════════════════════
 // ICON_MAP — ALL paths verified against Foundry v13 icon dump (6326 files)
-// Last verified: 2026-03-18 from Gage's Foundry instance
+// Last verified: 2026-03-18 from Foundry v13 instance
 // ═══════════════════════════════════════════════════════════════════════════
 const ICON_MAP = {
   // ── Natural Weapons ──
