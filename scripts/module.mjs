@@ -158,6 +158,21 @@ Hooks.once("init", () => {
     }),
   });
 
+  game.settings.register(MODULE_ID, "defaultImportType", {
+    name: "COMPIMPORTER.Settings.DefaultImportType",
+    hint: "COMPIMPORTER.Settings.DefaultImportTypeHint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "auto",
+    choices: {
+      auto: "Auto (monsters → actors, spells → items)",
+      actor: "Always import as Actor",
+      item: "Always import as Item",
+      journal: "Always import as Journal Entry",
+    },
+  });
+
   game.settings.register(MODULE_ID, "autoCreateMacros", {
     name: "COMPIMPORTER.Settings.AutoCreateMacros",
     hint: "COMPIMPORTER.Settings.AutoCreateMacrosHint",
