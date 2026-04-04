@@ -728,7 +728,7 @@ export function parseSpellcasting(specialAbilities) {
       // Regular spellcasting
       // English: "Cantrips (at will): fire bolt, light, mage hand"
       // French (AideDD): "Minor spells (at will): ..."
-      const cantripMatch = desc.match(/(?:Cantrips|Minor spells)\s*\(at will\):\s*(.+)/im);
+      const cantripMatch = desc.match(/(?:Cantrips|Minor spells)\s*\(at will\):\s*(.+?)(?=\s*•\s*\d+(?:st|nd|rd|th)|\s*•\s*$|$)/im);
       if (cantripMatch) {
         for (const name of splitSpellList(cantripMatch[1])) {
           const translated = translateFrenchSpell(name);
@@ -737,7 +737,8 @@ export function parseSpellcasting(specialAbilities) {
       }
 
       // English: "1st level (4 slots): detect magic, mage armor"
-      const slotRe = /(\d+)(?:st|nd|rd|th) level \((\d+) slots?\):\s*(.+)/gim;
+      // Stop at next bullet (•), next level header, or end of string
+      const slotRe = /(\d+)(?:st|nd|rd|th) level \((\d+) slots?\):\s*(.+?)(?=\s*•\s*\d+(?:st|nd|rd|th)|\s*•\s*$|$)/gim;
       let slotMatch;
       while ((slotMatch = slotRe.exec(desc)) !== null) {
         const level = parseInt(slotMatch[1]);
@@ -954,7 +955,7 @@ export function mapMonster(data) {
   // ─── Legendary / Lair Resources (dnd5e v3+) ──────────────────────────────
   // Parse legendary action count from legendary_desc intro text, default 3
   let legActCount = 0;
-  if (data.legendary_actions) {
+  if (data.legendary_actions?.length) {
     legActCount = 3;
     if (data.legendary_desc) {
       const laMatch = data.legendary_desc.match(/can take (\d+) legendary actions/i);

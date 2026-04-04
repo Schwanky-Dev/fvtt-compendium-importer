@@ -72,8 +72,35 @@ function parseDataArray(jsonStr) {
     const arr = JSON.parse(jsonStr);
     if (!Array.isArray(arr)) return [];
     return arr.map((entry) => {
-      const out = { name: entry.Name || entry.name || "Unknown", desc: entry.Desc || entry.desc || "" };
-      return out;
+      let desc = entry.Desc || entry.desc || "";
+      // Synthesize attack line from structured Roll20 fields and prepend to description
+      // Do this when structured fields exist, even if Desc has text (Desc may only have save effects)
+      if (entry["Type Attack"] && !/(?:Melee|Ranged)\s+(?:Weapon|Spell)\s+Attack/i.test(desc)) {
+        const type = entry.Type || "Melee";
+        const attackType = entry["Type Attack"] || "Weapon Attack";
+        const bonus = entry["Hit Bonus"] || "0";
+        const reach = entry.Reach || "5 ft.";
+        const target = entry.Target || "one target";
+        const dmg = entry.Damage || "";
+        const dmgType = entry["Damage Type"] || "";
+        const isRanged = /ranged/i.test(type);
+        let attackLine = `${type} ${attackType}: +${bonus} to hit, ${isRanged ? 'range' : 'reach'} ${reach}, ${target}.`;
+        if (dmg) {
+          const diceMatch = dmg.match(/(\d+)d(\d+)(?:\s*([+-])\s*(\d+))?/);
+          if (diceMatch) {
+            const [, count, die, sign, mod] = diceMatch;
+            let avg = Math.floor(parseInt(count) * (parseInt(die) + 1) / 2);
+            if (sign === '+') avg += parseInt(mod || 0);
+            if (sign === '-') avg -= parseInt(mod || 0);
+            attackLine += ` Hit: ${avg} (${dmg.trim()}) ${dmgType} damage.`;
+          } else {
+            attackLine += ` Hit: ${dmg.trim()} ${dmgType} damage.`;
+          }
+        }
+        // Prepend attack line to existing description (which may have save effects etc.)
+        desc = desc ? `${attackLine} ${desc}` : attackLine;
+      }
+      return { name: entry.Name || entry.name || "Unknown", desc };
     });
   } catch {
     return [];
@@ -346,7 +373,7 @@ export function normalizeRoll20Monster(raw) {
     challenge_rating: d["Challenge Rating"] || "0",
     actions: parseDataArray(d["data-Actions"]),
     reactions: parseDataArray(d["data-Reactions"]),
-    legendary_actions: parseDataArray(d["data-Legendary-Actions"]),
+    legendary_actions: parseDataArray(d["data-Legendary-Actions"] || d["data-Legendary Actions"]),
     special_abilities: parseDataArray(d["data-Traits"]),
     // Token art — check structured data first, then content blob <img> extraction
     img_main: d.Token || d.avatar || contentImg || null,
