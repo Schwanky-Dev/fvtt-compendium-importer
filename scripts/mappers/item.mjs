@@ -194,7 +194,7 @@ function buildActiveEffects(parsed, itemName, itemType) {
         name: `Resistance: ${dmgType.charAt(0).toUpperCase() + dmgType.slice(1)}`,
         icon: "icons/svg/shield.svg",
         changes: [
-          { key: "system.traits.dr.value", mode: 2, value: dmgType },
+          { key: "system.traits.dr.value", mode: 2, type: "add", value: dmgType },
         ],
         transfer: true,
       });
@@ -208,7 +208,7 @@ function buildActiveEffects(parsed, itemName, itemType) {
         name: `Immunity: ${dmgType.charAt(0).toUpperCase() + dmgType.slice(1)}`,
         icon: "icons/svg/aura.svg",
         changes: [
-          { key: "system.traits.di.value", mode: 2, value: dmgType },
+          { key: "system.traits.di.value", mode: 2, type: "add", value: dmgType },
         ],
         transfer: true,
       });
@@ -223,7 +223,7 @@ function buildActiveEffects(parsed, itemName, itemType) {
       name: `Set ${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)} to ${value}`,
       icon: "icons/svg/upgrade.svg",
       changes: [
-        { key: `system.abilities.${ability}.value`, mode: 5, value: String(value) }, // mode 5 = OVERRIDE
+        { key: `system.abilities.${ability}.value`, mode: 5, type: "override", value: String(value) }, // mode 5 = OVERRIDE / type = "override" (v14)
       ],
       transfer: true,
     });
@@ -235,7 +235,7 @@ function buildActiveEffects(parsed, itemName, itemType) {
       name: `+${parsed.acBonus} AC`,
       icon: "icons/svg/shield.svg",
       changes: [
-        { key: "system.attributes.ac.bonus", mode: 2, value: String(parsed.acBonus) },
+        { key: "system.attributes.ac.bonus", mode: 2, type: "add", value: String(parsed.acBonus) },
       ],
       transfer: true,
     });
@@ -247,7 +247,7 @@ function buildActiveEffects(parsed, itemName, itemType) {
       name: `+${parsed.spellSaveDCBonus} Spell Save DC`,
       icon: "icons/svg/daze.svg",
       changes: [
-        { key: "system.bonuses.spell.dc", mode: 2, value: String(parsed.spellSaveDCBonus) },
+        { key: "system.bonuses.spell.dc", mode: 2, type: "add", value: String(parsed.spellSaveDCBonus) },
       ],
       transfer: true,
     });
@@ -259,8 +259,8 @@ function buildActiveEffects(parsed, itemName, itemType) {
       name: `+${parsed.spellAttackBonus} Spell Attack`,
       icon: "icons/svg/daze.svg",
       changes: [
-        { key: "system.bonuses.rsak.attack", mode: 2, value: String(parsed.spellAttackBonus) },
-        { key: "system.bonuses.msak.attack", mode: 2, value: String(parsed.spellAttackBonus) },
+        { key: "system.bonuses.rsak.attack", mode: 2, type: "add", value: String(parsed.spellAttackBonus) },
+        { key: "system.bonuses.msak.attack", mode: 2, type: "add", value: String(parsed.spellAttackBonus) },
       ],
       transfer: true,
     });
