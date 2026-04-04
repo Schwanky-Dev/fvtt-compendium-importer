@@ -495,9 +495,9 @@ function buildActionItem(action, type = "natural") {
     item.system.proficient = 1;
   }
 
-  // Legendary action cost
+  // Legendary action cost — check both name and description
   if (type === "legendary") {
-    const costMatch = desc.match(/costs?\s+(\d+)\s+actions?/i);
+    const costMatch = (action.name + " " + desc).match(/costs?\s+(\d+)\s+actions?/i);
     if (costMatch) item.system.activation.cost = parseInt(costMatch[1]);
   }
 
